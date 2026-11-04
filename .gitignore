@@ -1,0 +1,28 @@
+# Variables de entorno y credenciales
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Entornos virtuales de Python
+.venv/
+venv/
+**/.venv/
+**/venv/
+pyvenv.cfg
+**/pyvenv.cfg
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+
+# Configuración local de editores
+.vscode/
+.idea/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos generados por Maven
+**/target/

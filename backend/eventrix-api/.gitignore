@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+# Variables de entorno y contraseñas
+.env
+**/.env
+
+# Entornos virtuales de Python
+.venv/
+**/.venv/
