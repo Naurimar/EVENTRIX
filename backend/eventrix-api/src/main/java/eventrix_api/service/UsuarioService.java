@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class UsuarioService {
@@ -34,14 +35,12 @@ public class UsuarioService {
     @Transactional
     public Usuario registrarUsuario(UsuarioRequest solicitud) {
 
-        // Verificar que el correo no este registrado
         if (usuarioRepository.findByCorreo(solicitud.getCorreo()).isPresent()) {
             throw new IllegalArgumentException(
                     "El correo ya esta registrado"
             );
         }
 
-        // Buscar el rol seleccionado
         Rol rol = rolRepository.findById(solicitud.getIdRol())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
@@ -49,28 +48,17 @@ public class UsuarioService {
                         )
                 );
 
-        // Crear el usuario
         Usuario usuario = new Usuario();
 
         usuario.setNombre(solicitud.getNombre());
         usuario.setCorreo(solicitud.getCorreo());
-
-        // Cifrar la contrasena con BCrypt
-        usuario.setClave(
-                passwordEncoder.encode(solicitud.getClave())
-        );
-
-        // Asignar estado activo
+        usuario.setClave(passwordEncoder.encode(solicitud.getClave()));
         usuario.setEstado(true);
-
-        // Asignar el rol
         usuario.setRol(rol);
 
-        // Guardar en MySQL
         return usuarioRepository.save(usuario);
     }
 
-    // Consultar todos los usuarios
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listarUsuarios() {
 
@@ -84,5 +72,25 @@ public class UsuarioService {
                         usuario.getRol().getNombre()
                 ))
                 .toList();
+    }
+
+    // Consultar un usuario por su identificador
+    @Transactional(readOnly = true)
+    public UsuarioResponse buscarUsuarioPorId(Integer id) {
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() ->
+                        new NoSuchElementException(
+                                "No se encontró el usuario con ID: " + id
+                        )
+                );
+
+        return new UsuarioResponse(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getCorreo(),
+                usuario.getEstado(),
+                usuario.getRol().getNombre()
+        );
     }
 }

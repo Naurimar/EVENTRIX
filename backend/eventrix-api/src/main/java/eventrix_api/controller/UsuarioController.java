@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -46,7 +47,6 @@ public class UsuarioController {
             );
 
         } catch (IllegalArgumentException e) {
-
             return ResponseEntity.badRequest().body(
                     Map.of("mensaje", e.getMessage())
             );
@@ -62,5 +62,24 @@ public class UsuarioController {
                 usuarioService.listarUsuarios();
 
         return ResponseEntity.ok(usuarios);
+    }
+
+    // Consultar un usuario por ID
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> buscarUsuarioPorId(
+            @PathVariable Integer id) {
+
+        try {
+            UsuarioResponse usuario =
+                    usuarioService.buscarUsuarioPorId(id);
+
+            return ResponseEntity.ok(usuario);
+
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    Map.of("mensaje", e.getMessage())
+            );
+        }
     }
 }
