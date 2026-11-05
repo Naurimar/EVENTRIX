@@ -330,3 +330,41 @@ svg { flex-shrink: 0; }
 }
 .login-panel .login-fondo { }
 @media (max-width: 380px) { .feature-grid { grid-template-columns: 1fr; } }
+/* =======================================
+   EVENTRIX - NAVEGACION ADMINISTRATIVA
+   ======================================= */
+
+/* Ocultar la navegación pública y el pie
+   únicamente dentro del panel administrativo */
+
+.oculto-en-panel {
+  display: none !important;
+}
+
+/* Paleta visual oficial EVENTRIX */
+
+:root {
+  --morado: #2B0E4F;
+  --violeta: #7A3EF0;
+  --lavanda: #C8A6FF;
+  --dorado: #D4AF37;
+  --lila-claro: #F3E8FF;
+  --error: #DC3545;
+}
+
+/* Mejorar la visualización general */
+
+.app {
+  min-height: 100vh;
+  background: var(--lila-claro);
+}
+
+/* Ajustes de accesibilidad */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--lavanda);
+  outline-offset: 3px;
+}

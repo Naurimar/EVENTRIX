@@ -7,6 +7,7 @@ import {
 import logo from './assets/images/logo-eventrix.png'
 import heroImage from './assets/images/hero-eventrix.jpg'
 import aboutImage from './assets/images/about-eventrix.jpg'
+import PanelAdmin from './components/layout/PanelAdmin'
 import './App.css'
 
 const API_URL = 'http://localhost:8080/api'
@@ -55,6 +56,7 @@ function App() {
       )
       sessionStorage.setItem('eventrix_token', token)
       setSesion({ correo: contenido.sub, rol: contenido.rol, token })
+      setVista('panel')
       setClave('')
     } catch (err) {
       setError(
@@ -421,6 +423,10 @@ function App() {
           </div>
         </main>
       )}
+      {/* PANEL DE ADMINISTRACIÓN */}
+{vista === 'panel' && sesion && (
+  <PanelAdmin sesion={sesion} cerrarSesion={cerrarSesion} />
+)}
 
       {/* PIE DE PÁGINA */}
       <footer className="footer">
