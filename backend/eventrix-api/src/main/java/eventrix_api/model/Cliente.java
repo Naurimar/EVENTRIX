@@ -33,6 +33,8 @@ public class Cliente {
     @Column(name = "correo", unique = true, length = 120)
     private String correo;
 
-    // La relación con ciudad se añadirá cuando
-    // confirmemos la estructura con el equipo.
+    @Column(name = "id_ciudad", nullable = false)
+    private Integer idCiudad;
+
+    
 }
