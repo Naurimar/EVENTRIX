@@ -31,3 +31,19 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### EVENTRIX - Seguridad y archivos locales ###
+.env
+.env.*
+!.env.example
+application-local.properties
+application-dev.properties
+
+### Errores y registros de Java ###
+hs_err_pid*.log
+replay_pid*.log
+*.hprof
+
+### Archivos del sistema ###
+.DS_Store
+Thumbs.db
