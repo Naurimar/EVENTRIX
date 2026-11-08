@@ -1,6 +1,8 @@
 
 package eventrix_api.controller;
 
+import eventrix_api.dto.UsuarioActualizarRequest;
+import eventrix_api.dto.UsuarioEstadoRequest;
 import eventrix_api.dto.UsuarioRequest;
 import eventrix_api.dto.UsuarioResponse;
 import eventrix_api.model.Usuario;
@@ -78,6 +80,69 @@ public class UsuarioController {
 
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    Map.of("mensaje", e.getMessage())
+            );
+        }
+    }
+
+    // Actualizar un usuario
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> actualizarUsuario(
+            @PathVariable Integer id,
+            @Valid @RequestBody UsuarioActualizarRequest solicitud) {
+
+        try {
+            UsuarioResponse usuario =
+                    usuarioService.actualizarUsuario(id, solicitud);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "mensaje", "Usuario actualizado correctamente",
+                            "usuario", usuario
+                    )
+            );
+
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    Map.of("mensaje", e.getMessage())
+            );
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("mensaje", e.getMessage())
+            );
+        }
+    }
+
+    // Activar o desactivar un usuario
+    @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> actualizarEstado(
+            @PathVariable Integer id,
+            @Valid @RequestBody UsuarioEstadoRequest solicitud) {
+
+        try {
+            UsuarioResponse usuario =
+                    usuarioService.actualizarEstado(
+                            id,
+                            solicitud.getEstado()
+                    );
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "mensaje", "Estado del usuario actualizado correctamente",
+                            "usuario", usuario
+                    )
+            );
+
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    Map.of("mensaje", e.getMessage())
+            );
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
                     Map.of("mensaje", e.getMessage())
             );
         }

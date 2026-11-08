@@ -1,6 +1,7 @@
 
 package eventrix_api.service;
 
+import eventrix_api.dto.UsuarioActualizarRequest;
 import eventrix_api.dto.UsuarioRequest;
 import eventrix_api.dto.UsuarioResponse;
 import eventrix_api.model.Rol;
@@ -9,6 +10,8 @@ import eventrix_api.repository.RolRepository;
 import eventrix_api.repository.UsuarioRepository;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,7 +77,6 @@ public class UsuarioService {
                 .toList();
     }
 
-    // Consultar un usuario por su identificador
     @Transactional(readOnly = true)
     public UsuarioResponse buscarUsuarioPorId(Integer id) {
 
@@ -85,6 +87,78 @@ public class UsuarioService {
                         )
                 );
 
+        return convertirARespuesta(usuario);
+    }
+
+    // Actualizar nombre, correo y rol de un usuario
+    @Transactional
+    public UsuarioResponse actualizarUsuario(
+            Integer id,
+            UsuarioActualizarRequest solicitud) {
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() ->
+                        new NoSuchElementException(
+                                "No se encontró el usuario con ID: " + id
+                        )
+                );
+
+        usuarioRepository.findByCorreo(solicitud.getCorreo())
+                .filter(usuarioExistente ->
+                        !usuarioExistente.getId().equals(id))
+                .ifPresent(usuarioExistente -> {
+                    throw new IllegalArgumentException(
+                            "El correo ya está registrado por otro usuario"
+                    );
+                });
+
+        Rol rol = rolRepository.findById(solicitud.getIdRol())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "El rol seleccionado no existe"
+                        )
+                );
+
+        usuario.setNombre(solicitud.getNombre());
+        usuario.setCorreo(solicitud.getCorreo());
+        usuario.setRol(rol);
+
+        Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+        return convertirARespuesta(usuarioActualizado);
+    }
+
+    // Activar o desactivar un usuario
+    @Transactional
+    public UsuarioResponse actualizarEstado(Integer id, Boolean estado) {
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() ->
+                        new NoSuchElementException(
+                                "No se encontró el usuario con ID: " + id
+                        )
+                );
+
+        Authentication autenticacion =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (Boolean.FALSE.equals(estado)
+                && autenticacion != null
+                && usuario.getCorreo().equalsIgnoreCase(autenticacion.getName())) {
+
+            throw new IllegalArgumentException(
+                    "No puedes desactivar tu propia cuenta"
+            );
+        }
+
+        usuario.setEstado(estado);
+
+        Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+        return convertirARespuesta(usuarioActualizado);
+    }
+
+    private UsuarioResponse convertirARespuesta(Usuario usuario) {
         return new UsuarioResponse(
                 usuario.getId(),
                 usuario.getNombre(),
