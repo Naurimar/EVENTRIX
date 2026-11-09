@@ -1,105 +1,138 @@
 
 import { useState } from 'react'
 import {
-  LayoutDashboard,
+  House,
   Users,
   CalendarDays,
-  Building2,
-  Menu,
-  X,
+  Layers3,
+  Bell,
+  CircleUserRound,
   LogOut
 } from 'lucide-react'
 
 import ClientesPage from '../../pages/clientes/ClientesPage'
+import EventosPage from '../../pages/eventos/EventosPage'
+import EspaciosPage from '../../pages/espacios/EspaciosPage'
+
+import logoEventrix from '../../assets/images/logo-eventrix.png'
 import './PanelAdmin.css'
 
 const opciones = [
-  { id: 'resumen', nombre: 'Resumen', icono: LayoutDashboard },
-  { id: 'clientes', nombre: 'Clientes', icono: Users },
+  { id: 'resumen', nombre: 'Inicio', icono: House },
   { id: 'eventos', nombre: 'Eventos', icono: CalendarDays },
-  { id: 'espacios', nombre: 'Espacios', icono: Building2 },
+  { id: 'clientes', nombre: 'Clientes', icono: Users },
+  { id: 'espacios', nombre: 'Espacios', icono: Layers3 }
 ]
 
 export default function PanelAdmin({ sesion, cerrarSesion }) {
   const [seccion, setSeccion] = useState('resumen')
-  const [menuAbierto, setMenuAbierto] = useState(false)
 
   function navegar(id) {
     setSeccion(id)
-    setMenuAbierto(false)
   }
 
   return (
     <main className="panel-admin">
 
-      {/* ENCABEZADO DEL PANEL */}
-      <div className="panel-encabezado">
-        <div>
-          <span className="panel-etiqueta">
-            EVENTRIX · ADMINISTRACIÓN
-          </span>
+      {/* BARRA SUPERIOR HORIZONTAL */}
+      <header className="panel-barra-superior">
+        <div className="panel-barra-interior">
 
-          <h1>Panel de gestión</h1>
-
-          <p>
-            Organiza clientes, eventos y espacios desde un solo lugar.
-          </p>
-        </div>
-
-        <div className="panel-usuario">
-          <span>{sesion?.correo}</span>
-
-          <button type="button" onClick={cerrarSesion}>
-            <LogOut size={17} />
-            Salir
-          </button>
-        </div>
-      </div>
-
-      {/* MENÚ RESPONSIVE PARA CELULARES */}
-      <button
-        type="button"
-        className="panel-menu-movil"
-        onClick={() => setMenuAbierto(!menuAbierto)}
-        aria-expanded={menuAbierto}
-        aria-controls="panel-navegacion"
-      >
-        {menuAbierto ? <X size={20} /> : <Menu size={20} />}
-        Módulos de gestión
-      </button>
-
-      {/* NAVEGACIÓN DE MÓDULOS */}
-      <nav
-        id="panel-navegacion"
-        className={`panel-navegacion ${menuAbierto ? 'abierta' : ''}`}
-        aria-label="Módulos de administración"
-      >
-        {opciones.map(({ id, nombre, icono: Icono }) => (
+          {/* LOGO ORIGINAL */}
           <button
             type="button"
-            key={id}
-            className={seccion === id ? 'seleccionado' : ''}
-            onClick={() => navegar(id)}
-            aria-current={seccion === id ? 'page' : undefined}
+            className="panel-marca"
+            onClick={() => navegar('resumen')}
+            aria-label="Ir al inicio de EVENTRIX"
           >
-            <Icono size={19} />
-            {nombre}
+            <span className="panel-logo-recorte">
+              <img
+                src={logoEventrix}
+                alt="Logo de EVENTRIX"
+                className="panel-logo"
+              />
+            </span>
+
+            <span className="panel-marca-textos">
+              <strong>EVENTRIX</strong>
+              <small>GESTIÓN INTELIGENTE DE EVENTOS</small>
+            </span>
           </button>
-        ))}
-      </nav>
+
+          {/* NAVEGACIÓN HORIZONTAL */}
+          <nav
+            className="panel-navegacion"
+            aria-label="Navegación principal"
+          >
+            {opciones.map(({ id, nombre, icono: Icono }) => (
+              <button
+                key={id}
+                type="button"
+                className={`panel-enlace ${
+                  seccion === id ? 'seleccionado' : ''
+                }`}
+                onClick={() => navegar(id)}
+                aria-current={
+                  seccion === id ? 'page' : undefined
+                }
+              >
+                <Icono size={17} />
+                <span>{nombre}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* USUARIO Y CIERRE DE SESIÓN */}
+          <div className="panel-barra-derecha">
+
+            <span
+              className="panel-notificaciones"
+              title="Notificaciones: próximamente"
+            >
+              <Bell size={19} />
+            </span>
+
+            <div className="panel-perfil">
+              <CircleUserRound size={29} />
+
+              <span className="panel-perfil-datos">
+                <strong>
+                  {sesion?.nombre || 'Mi cuenta'}
+                </strong>
+                <small>
+                  {sesion?.correo || 'Usuario'}
+                </small>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="panel-salir"
+              onClick={cerrarSesion}
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut size={19} />
+            </button>
+
+          </div>
+        </div>
+      </header>
 
       {/* CONTENIDO PRINCIPAL */}
       <section className="panel-contenido">
 
-        {/* RESUMEN */}
         {seccion === 'resumen' ? (
-          <>
-            <h2>Bienvenido a EVENTRIX</h2>
 
-            <p>
-              Selecciona un módulo para administrar la información
-              de tus clientes, eventos y espacios.
-            </p>
+          /* MÓDULO DE INICIO */
+          <div className="panel-inicio">
+            <div className="panel-titulo-seccion">
+              <h1>Bienvenido a EVENTRIX</h1>
+              <p>
+                Gestiona tus clientes, eventos y espacios
+                desde un solo lugar.
+              </p>
+            </div>
 
             <div className="panel-tarjetas">
               {opciones.slice(1).map(
@@ -111,15 +144,14 @@ export default function PanelAdmin({ sesion, cerrarSesion }) {
                     onClick={() => navegar(id)}
                   >
                     <Icono size={30} />
-
                     <strong>{nombre}</strong>
-
                     <span>Gestionar módulo</span>
                   </button>
                 )
               )}
             </div>
-          </>
+          </div>
+
         ) : seccion === 'clientes' ? (
 
           /* GESTIÓN DE CLIENTES */
@@ -128,28 +160,17 @@ export default function PanelAdmin({ sesion, cerrarSesion }) {
         ) : seccion === 'eventos' ? (
 
           /* GESTIÓN DE EVENTOS */
-          <>
-            <h2>Gestión de eventos</h2>
-            <p>
-              Aquí integraremos el listado, registro, edición
-              y eliminación de bodas, cumpleaños y quinceañeros.
-            </p>
-          </>
+          <EventosPage />
 
         ) : seccion === 'espacios' ? (
 
           /* GESTIÓN DE ESPACIOS */
-          <>
-            <h2>Gestión de espacios</h2>
-            <p>
-              Aquí integraremos los salones y espacios disponibles,
-              con sus capacidades, tarifas y estados.
-            </p>
-          </>
+          <EspaciosPage />
 
         ) : null}
 
       </section>
+
     </main>
   )
 }

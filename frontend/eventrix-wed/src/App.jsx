@@ -118,6 +118,7 @@ function App() {
   return (
     <div className="app">
       {/* NAVEGACIÓN */}
+      {vista !== 'panel' && (
       <header className="navbar">
         <a className="marca" href="#inicio" onClick={() => irAInicio('inicio')}>
           <img src={logo} alt="EVENTRIX" />
@@ -148,6 +149,7 @@ function App() {
           </button>
         )}
       </header>
+      )}
 
       {vista === 'inicio' && (
         <main>
@@ -429,11 +431,13 @@ function App() {
 )}
 
       {/* PIE DE PÁGINA */}
+      {vista !== 'panel' && (
       <footer className="footer">
         <img src={logo} alt="" />
         <span>EVENTRIX</span>
         <small>© {new Date().getFullYear()} EVENTRIX. Todos los derechos reservados.</small>
       </footer>
+      )}
     </div>
   )
 }

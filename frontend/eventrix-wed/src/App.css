@@ -368,3 +368,72 @@ select:focus-visible {
   outline: 3px solid var(--lavanda);
   outline-offset: 3px;
 }
+
+/* ==========================================
+   EVENTRIX - PALETA OFICIAL DEL NUEVO BOCETO
+   ========================================== */
+
+:root {
+  --morado: #2B073D;
+  --morado-profundo: #440A60;
+  --violeta: #9726BC;
+  --violeta-claro: #B45AE0;
+  --lavanda: #EAD3F5;
+  --dorado: #D4AF37;
+  --lila-claro: #FAF5FD;
+  --texto: #2B123E;
+  --gris: #756783;
+  --error: #DC3545;
+  --exito: #28A745;
+}
+
+/* Barra superior tipo boceto */
+.navbar {
+  background: linear-gradient(
+    100deg,
+    #290538 0%,
+    #440A60 55%,
+    #260534 100%
+  );
+  border-bottom: 1px solid #D4AF3760;
+}
+
+/* Elementos seleccionados */
+.nav-links a.activo {
+  background: linear-gradient(180deg, #B24BDB, #8715AE);
+  box-shadow: 0 3px 12px #16022140;
+}
+
+/* Fondos claros y delicados */
+.app {
+  background:
+    radial-gradient(circle at 92% 90%, #E4C2F3, transparent 36%),
+    #FAF5FD;
+}
+
+/* Botones principales */
+.btn-login,
+.btn-send {
+  background: linear-gradient(180deg, #B14CDB, #780A9B);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px #440A6033;
+}
+
+/* Tarjetas */
+.feature-card,
+.contact-form-card {
+  background: linear-gradient(145deg, #FFFFFF, #FAF5FD);
+  border-color: #EAD3F5;
+  box-shadow: 0 5px 18px #440A6014;
+}
+
+/* Detalles dorados */
+.decorative-line,
+.linea-h {
+  background: #D4AF37;
+}
+
+/* Ocultar navegación pública dentro del panel */
+.oculto-en-panel {
+  display: none !important;
+}
