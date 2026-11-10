@@ -1,5 +1,4 @@
 
-
 import os
 from datetime import datetime, timezone
 
@@ -39,18 +38,41 @@ def analizar_eventos(conexion):
         """
     )
 
-    presupuesto = pd.to_numeric(df["presupuesto"], errors="coerce").fillna(0)
-    invitados = pd.to_numeric(df["num_invitados"], errors="coerce").fillna(0)
+    presupuesto = pd.to_numeric(
+        df["presupuesto"], errors="coerce"
+    ).fillna(0)
+
+    invitados = pd.to_numeric(
+        df["num_invitados"], errors="coerce"
+    ).fillna(0)
+
+    fechas = pd.to_datetime(df["fecha"], errors="coerce")
+
+    eventos_por_tipo = {
+        str(k): int(v)
+        for k, v in df["tipo"].fillna("Sin tipo").value_counts().items()
+    }
+
+    eventos_por_mes = {
+        str(k): int(v)
+        for k, v in fechas.dropna().dt.strftime("%Y-%m").value_counts().sort_index().items()
+    }
 
     return {
         "totalEventos": int(len(df)),
         "presupuestoTotal": float(presupuesto.sum()),
-        "presupuestoPromedio": float(presupuesto.mean()) if not df.empty else 0,
+        "presupuestoPromedio": (
+            float(presupuesto.mean()) if not df.empty else 0
+        ),
         "totalInvitados": int(invitados.sum()),
+
         "eventosPorEstado": {
             str(k): int(v)
             for k, v in df["estado"].fillna("Sin estado").value_counts().items()
         },
+
+        "eventosPorTipo": eventos_por_tipo,
+        "eventosPorMes": eventos_por_mes,
     }
 
 
@@ -63,7 +85,9 @@ def analizar_reservas(conexion):
         """
     )
 
-    costos = pd.to_numeric(df["costo_total"], errors="coerce").fillna(0)
+    costos = pd.to_numeric(
+        df["costo_total"], errors="coerce"
+    ).fillna(0)
 
     return {
         "totalReservas": int(len(df)),
@@ -83,7 +107,7 @@ def analizar_proveedores(conexion):
         SELECT p.id_proveedor, p.nombre, p.calificacion, p.activo,
                t.nombre_tipo AS categoria
         FROM proveedor p
-        LEFT JOIN tiposervicio t ON p.id_tipo = t.id_tipo
+        LEFT JOIN tipo_servicio t ON p.id_tipo = t.id_tipo
         """
     )
 
@@ -115,7 +139,7 @@ def analizar_invitados(conexion):
         conexion,
         """
         SELECT id_evento, id_invitado, estado_rsvp
-        FROM eventoinvitado
+        FROM evento_invitado
         """
     )
 
@@ -160,6 +184,14 @@ def analizar_eventrix():
         print(f"Presupuesto total: ${eventos['presupuestoTotal']:,.2f} COP")
         print(f"Presupuesto promedio: ${eventos['presupuestoPromedio']:,.2f} COP")
         print(f"Total de invitados estimados en eventos: {eventos['totalInvitados']}")
+
+        print("\n=== EVENTOS POR TIPO ===")
+        for tipo, cantidad in eventos["eventosPorTipo"].items():
+            print(f"{tipo}: {cantidad}")
+
+        print("\n=== EVENTOS POR MES ===")
+        for mes, cantidad in eventos["eventosPorMes"].items():
+            print(f"{mes}: {cantidad}")
 
         print("\n=== RESERVAS ===")
         print(f"Total de reservas: {reservas['totalReservas']}")
