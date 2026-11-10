@@ -1,0 +1,13 @@
+{
+  "estado": "PLANIFICADO",
+  "fecha": "2026-12-20",
+  "horaInicio": "17:00:00",
+  "idCliente": null,
+  "idEvento": 1,
+  "idUsuario": 3,
+  "nombre": "Registro de prueba",
+  "numInvitados": 70,
+  "presupuesto": 3000000,
+  "tematica": "Elegante",
+  "tipo": "CUMPLEAÑOS"
+}
