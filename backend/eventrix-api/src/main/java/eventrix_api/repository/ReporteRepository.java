@@ -1,4 +1,3 @@
-
 package eventrix_api.repository;
 
 import eventrix_api.model.ResumenReporte;
@@ -7,6 +6,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Repository
 public class ReporteRepository {
@@ -21,6 +22,7 @@ public class ReporteRepository {
     }
 
     public ResumenReporte obtenerResumen() {
+
         Document documento = mongoTemplate.findById(
             ID_RESUMEN,
             Document.class,
@@ -28,27 +30,60 @@ public class ReporteRepository {
         );
 
         if (documento == null) {
-            return new ResumenReporte(
-                0L,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                0L
-            );
+            return crearResumenVacio();
         }
 
-        long totalEventos = obtenerLong(documento, "totalEventos");
-        BigDecimal presupuestoTotal =
-            obtenerDecimal(documento, "presupuestoTotal");
-        BigDecimal presupuestoPromedio =
-            obtenerDecimal(documento, "presupuestoPromedio");
-        long totalInvitados = obtenerLong(documento, "totalInvitados");
-
         return new ResumenReporte(
-            totalEventos,
-            presupuestoTotal,
-            presupuestoPromedio,
-            totalInvitados
+            obtenerLong(documento, "totalEventos"),
+            obtenerDecimal(documento, "presupuestoTotal"),
+            obtenerDecimal(documento, "presupuestoPromedio"),
+            obtenerLong(documento, "totalInvitados"),
+
+            obtenerMapa(documento, "eventosPorEstado"),
+            obtenerMapa(documento, "eventosPorTipo"),
+            obtenerMapa(documento, "eventosPorMes"),
+
+            obtenerMapa(documento, "reservas"),
+            obtenerMapa(documento, "proveedores"),
+            obtenerMapa(documento, "invitados"),
+
+            documento.get("fechaGeneracion")
         );
+    }
+
+    private ResumenReporte crearResumenVacio() {
+        return new ResumenReporte(
+            0L,
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
+            0L,
+            new LinkedHashMap<>(),
+            new LinkedHashMap<>(),
+            new LinkedHashMap<>(),
+            new LinkedHashMap<>(),
+            new LinkedHashMap<>(),
+            new LinkedHashMap<>(),
+            null
+        );
+    }
+
+    private Map<String, Object> obtenerMapa(
+            Document documento,
+            String campo) {
+
+        Object valor = documento.get(campo);
+
+        if (valor instanceof Map<?, ?> mapa) {
+            Map<String, Object> resultado = new LinkedHashMap<>();
+
+            mapa.forEach((clave, dato) ->
+                resultado.put(String.valueOf(clave), dato)
+            );
+
+            return resultado;
+        }
+
+        return new LinkedHashMap<>();
     }
 
     private long obtenerLong(Document documento, String campo) {
@@ -58,8 +93,8 @@ public class ReporteRepository {
             return 0L;
         }
 
-        if (valor instanceof Number) {
-            return ((Number) valor).longValue();
+        if (valor instanceof Number numero) {
+            return numero.longValue();
         }
 
         try {
@@ -67,7 +102,6 @@ public class ReporteRepository {
         } catch (NumberFormatException e) {
             throw new IllegalStateException(
                 "El campo '" + campo
-                    + "' del documento '" + ID_RESUMEN
                     + "' no contiene un número entero válido.",
                 e
             );
@@ -86,7 +120,6 @@ public class ReporteRepository {
         } catch (NumberFormatException e) {
             throw new IllegalStateException(
                 "El campo '" + campo
-                    + "' del documento '" + ID_RESUMEN
                     + "' no contiene un número decimal válido.",
                 e
             );
