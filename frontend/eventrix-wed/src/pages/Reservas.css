@@ -1,0 +1,703 @@
+
+/* ==========================================
+   EVENTRIX - MÓDULO DE RESERVAS
+   IDENTIDAD VISUAL OFICIAL
+========================================== */
+
+.reservas-module {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+
+/* ENCABEZADO */
+
+.reservas-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reservas-heading h2 {
+  color: var(--morado-noche);
+  font-family: var(--fuente-titulos);
+  font-size: 20px;
+  margin: 0 0 5px;
+}
+
+.reservas-heading p,
+.reservas-form-heading p,
+.reservas-list-heading p {
+  color: var(--texto-secundario);
+  font-size: 12px;
+  margin: 0;
+}
+
+/* BOTONES */
+
+.reservas-primary-button,
+.reservas-secondary-button {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--fuente-general);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reservas-primary-button {
+  background: var(--violeta);
+  color: var(--blanco);
+  border: 1px solid var(--violeta);
+}
+
+.reservas-primary-button:hover {
+  background: var(--morado-noche);
+  border-color: var(--morado-noche);
+}
+
+.reservas-secondary-button {
+  background: var(--blanco);
+  color: var(--texto-secundario);
+  border: 1px solid var(--borde);
+}
+
+.reservas-secondary-button:hover {
+  background: var(--lila-claro);
+  color: var(--morado-noche);
+}
+
+/* TARJETAS DE RESUMEN */
+
+.reservas-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.reservas-summary-card {
+  min-height: 92px;
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.reservas-summary-card span {
+  color: var(--texto-secundario);
+  font-size: 11px;
+}
+
+.reservas-summary-card strong {
+  color: var(--morado-noche);
+  font-family: var(--fuente-titulos);
+  font-size: 25px;
+}
+
+.reservas-summary-card.confirmadas strong {
+  color: #267B42;
+}
+
+.reservas-summary-card.pendientes strong {
+  color: #94700A;
+}
+
+.reservas-summary-card.canceladas strong {
+  color: var(--error);
+}
+
+/* FORMULARIO */
+
+.reservas-form-card,
+.reservas-list-card {
+  min-width: 0;
+  padding: 22px;
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.reservas-form-heading,
+.reservas-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--violeta);
+}
+
+.reservas-form-heading h3,
+.reservas-list-heading h3 {
+  color: var(--morado-noche);
+  font-family: var(--fuente-titulos);
+  font-size: 16px;
+  margin: 0 0 5px;
+}
+
+.reservas-close-button {
+  width: 35px;
+  height: 35px;
+  border: none;
+  border-radius: 8px;
+  background: var(--lila-claro);
+  color: var(--morado-noche);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.reservas-close-button:hover {
+  background: var(--lavanda);
+}
+
+.reservas-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+}
+
+.reservas-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--morado-noche);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.reservas-field input,
+.reservas-field select,
+.reservas-status-filter {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  background: #FAF4FE;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  outline: none;
+  color: var(--morado-noche);
+  font-family: var(--fuente-general);
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.reservas-field input:focus,
+.reservas-field select:focus,
+.reservas-search:focus-within,
+.reservas-status-filter:focus {
+  border-color: var(--violeta);
+  box-shadow: 0 0 0 3px rgba(131, 21, 168, 0.10);
+}
+
+.reservas-field input::placeholder,
+.reservas-search input::placeholder {
+  color: var(--texto-secundario);
+}
+
+.reservas-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+/* FILTROS Y BÚSQUEDA */
+
+.reservas-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.reservas-search {
+  min-height: 42px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  color: var(--texto-secundario);
+  background: #FAF4FE;
+}
+
+.reservas-search input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--morado-noche);
+  font-family: var(--fuente-general);
+  font-size: 12px;
+}
+
+.reservas-status-filter {
+  width: 190px;
+  flex-shrink: 0;
+}
+
+/* TABLA */
+
+.reservas-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.reservas-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.reservas-table th {
+  padding: 13px 12px;
+  background: #F8EDFF;
+  color: var(--morado-noche);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.reservas-table th:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.reservas-table th:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.reservas-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto-secundario);
+  font-size: 11px;
+}
+
+.reservas-client-cell,
+.reservas-date-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reservas-client-cell strong,
+.reservas-date-cell strong {
+  color: var(--morado-noche);
+  font-size: 11px;
+}
+
+.reservas-client-cell span,
+.reservas-date-cell span {
+  color: var(--violeta);
+  font-size: 10px;
+}
+
+.reservas-client-cell small {
+  color: var(--texto-secundario);
+  font-size: 9px;
+}
+
+/* ESTADOS */
+
+.reservas-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 9px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.reservas-status.confirmada {
+  background: #E5F6EC;
+  color: #267B42;
+}
+
+.reservas-status.pendiente {
+  background: #FAF2D9;
+  color: #94700A;
+}
+
+.reservas-status.cancelada {
+  background: #FCE9EA;
+  color: #DC3545;
+}
+
+/* ACCIONES */
+
+.reservas-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.reservas-edit-button,
+.reservas-delete-button {
+  width: 31px;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reservas-edit-button {
+  background: var(--lila-claro);
+  color: var(--violeta);
+}
+
+.reservas-edit-button:hover {
+  background: var(--lavanda);
+}
+
+.reservas-delete-button {
+  background: #FCE9EA;
+  color: var(--error);
+}
+
+.reservas-delete-button:hover {
+  background: #F6D1D4;
+}
+
+/* ESTADO VACÍO */
+
+.reservas-empty {
+  min-height: 220px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.reservas-empty-icon {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 12px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lila-claro);
+  color: var(--violeta);
+}
+
+.reservas-empty h3 {
+  margin: 0 0 7px;
+  color: var(--morado-noche);
+  font-family: var(--fuente-titulos);
+  font-size: 15px;
+}
+
+.reservas-empty p {
+  max-width: 380px;
+  margin: 0;
+  color: var(--texto-secundario);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 900px) {
+  .reservas-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .reservas-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .reservas-heading .reservas-primary-button {
+    width: 100%;
+  }
+
+  .reservas-summary {
+    gap: 10px;
+  }
+
+  .reservas-form-card,
+  .reservas-list-card {
+    padding: 16px;
+  }
+
+  .reservas-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reservas-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reservas-status-filter {
+    width: 100%;
+  }
+
+  .reservas-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .reservas-form-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .reservas-summary-card {
+    padding: 12px;
+  }
+
+  .reservas-summary-card strong {
+    font-size: 21px;
+  }
+}
+
+
+/* =========================================
+   EVENTRIX - VENTANA DE CONFIRMACIÓN
+========================================= */
+
+.eventrix-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(24, 10, 39, 0.62);
+  backdrop-filter: blur(5px);
+  animation: eventrix-fondo .25s ease;
+}
+
+.eventrix-modal {
+  width: 100%;
+  max-width: 430px;
+  padding: 34px 30px 28px;
+  border: 1px solid #EBDDF5;
+  border-radius: 22px;
+  background: #FFFFFF;
+  box-shadow: 0 22px 65px rgba(31, 10, 48, 0.25);
+  text-align: center;
+  animation: eventrix-aparecer .3s ease;
+}
+
+.eventrix-modal-icono {
+  width: 66px;
+  height: 66px;
+  margin: 0 auto 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #F6EBFC;
+  color: #8315A8;
+}
+
+.eventrix-modal h2 {
+  margin: 0 0 12px;
+  color: #2B0E4F;
+  font-family: Georgia, serif;
+  font-size: 23px;
+}
+
+.eventrix-modal p {
+  margin: 0 auto 12px;
+  color: #756B80;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.eventrix-modal-detalle {
+  display: block;
+  margin-bottom: 26px;
+  color: #96899F;
+  font-size: 12px;
+}
+
+.eventrix-modal-acciones {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.eventrix-modal-acciones button {
+  min-height: 43px;
+  padding: 0 19px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.eventrix-modal-cancelar {
+  border: 1px solid #EBDDF5;
+  background: #FFFFFF;
+  color: #2B0E4F;
+}
+
+.eventrix-modal-cancelar:hover {
+  background: #F6EBFC;
+}
+
+/* BOTÓN ELIMINAR */
+
+.reservas-modal-eliminar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #DC3545;
+  background: #DC3545;
+  color: #FFFFFF;
+}
+
+.reservas-modal-eliminar:hover {
+  background: #B92334;
+  border-color: #B92334;
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   EVENTRIX - NOTIFICACIONES
+========================================= */
+
+.eventrix-toast {
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(390px, calc(100% - 40px));
+  padding: 16px 17px;
+  border: 1px solid #EBDDF5;
+  border-radius: 14px;
+  background: #FFFFFF;
+  box-shadow: 0 12px 35px rgba(43, 14, 79, 0.16);
+  color: #2B0E4F;
+  animation: eventrix-toast-entrada .3s ease;
+}
+
+.eventrix-toast.exito {
+  border-left: 4px solid #3A9B65;
+}
+
+.eventrix-toast.exito > svg {
+  flex-shrink: 0;
+  color: #3A9B65;
+}
+
+.eventrix-toast.error {
+  border-left: 4px solid #DC3545;
+}
+
+.eventrix-toast.error > svg {
+  flex-shrink: 0;
+  color: #DC3545;
+}
+
+.eventrix-toast span {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.eventrix-toast button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #756B80;
+  cursor: pointer;
+}
+
+.eventrix-toast button:hover {
+  background: #F6EBFC;
+  color: #2B0E4F;
+}
+
+/* ANIMACIONES */
+
+@keyframes eventrix-fondo {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes eventrix-aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes eventrix-toast-entrada {
+  from {
+    opacity: 0;
+    transform: translateX(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .eventrix-modal {
+    padding: 28px 20px 23px;
+  }
+
+  .eventrix-modal-acciones {
+    flex-direction: column-reverse;
+  }
+
+  .eventrix-modal-acciones button {
+    width: 100%;
+  }
+
+  .eventrix-toast {
+    top: 15px;
+    right: 15px;
+  }
+}
