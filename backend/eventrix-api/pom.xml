@@ -106,6 +106,31 @@
             <scope>test</scope>
         </dependency>
 
+
+        <!-- JWT: API principal -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.13.0</version>
+        </dependency>
+
+        <!-- JWT: implementación -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.13.0</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- JWT: soporte JSON con Jackson -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.13.0</version>
+            <scope>runtime</scope>
+        </dependency>
+
+
     </dependencies>
 
     <build>
