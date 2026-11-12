@@ -1,11 +1,10 @@
-
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Users, Plus, Search, Pencil, Trash2, Eye,
   X, Save, ChevronLeft, ChevronRight,
   MapPin, RefreshCw, AlertTriangle
 } from 'lucide-react'
-import { clientesApi } from '../../services/api'
+import { clientesApi, ubicacionesApi } from '../../services/api'
 import './ClientesPage.css'
 
 const formularioInicial = {
@@ -13,7 +12,8 @@ const formularioInicial = {
   nombre: '',
   telefono: '',
   correo: '',
-  idCiudad: '1'
+  idDepartamento: '',
+  idCiudad: ''
 }
 
 export default function ClientesPage() {
@@ -28,6 +28,36 @@ export default function ClientesPage() {
   const [modal, setModal] = useState('')
   const [seleccionado, setSeleccionado] = useState(null)
   const [formulario, setFormulario] = useState(formularioInicial)
+  const [departamentos, setDepartamentos] = useState([])
+  const [catalogoCiudades, setCatalogoCiudades] = useState([])
+  const [cargandoUbicaciones, setCargandoUbicaciones] = useState(true)
+  const [errorUbicaciones, setErrorUbicaciones] = useState('')
+
+  async function cargarUbicaciones() {
+    setCargandoUbicaciones(true)
+    setErrorUbicaciones('')
+
+    try {
+      // La API devuelve los nombres y sus IDs de MySQL.
+      const [datosDepartamentos, datosCiudades] = await Promise.all([
+        ubicacionesApi.listarDepartamentos(),
+        ubicacionesApi.listarCiudades()
+      ])
+
+      if (!Array.isArray(datosDepartamentos) || !Array.isArray(datosCiudades)) {
+        throw new Error('El catálogo de ubicaciones devolvió datos inesperados.')
+      }
+
+      setDepartamentos(datosDepartamentos)
+      setCatalogoCiudades(datosCiudades)
+    } catch (err) {
+      setErrorUbicaciones(
+        err.message || 'No fue posible consultar departamentos y ciudades.'
+      )
+    } finally {
+      setCargandoUbicaciones(false)
+    }
+  }
 
   async function cargarClientes() {
     setCargando(true)
@@ -64,12 +94,48 @@ export default function ClientesPage() {
     }
   }, [])
 
+  useEffect(() => {
+    cargarUbicaciones()
+  }, [])
+
+  // Se usan cadenas para comparar los IDs recibidos de MySQL y React.
+  const ciudadesPorId = useMemo(
+    () => new Map(catalogoCiudades.map(item => [String(item.idCiudad), item])),
+    [catalogoCiudades]
+  )
+
+  const departamentosPorId = useMemo(
+    () => new Map(departamentos.map(item => [String(item.idDepartamento), item])),
+    [departamentos]
+  )
+
+  function nombreCiudad(id) {
+    if (id == null || id === '') return '—'
+    const registro = ciudadesPorId.get(String(id))
+    return registro?.nombreCiudad || `Ciudad no encontrada (ID ${id})`
+  }
+
+  function nombreDepartamento(id) {
+    if (id == null || id === '') return '—'
+    return departamentosPorId.get(String(id))?.nombreDepartamento || 'No disponible'
+  }
+
+  // El departamento es visual; el CRUD de Clientes sigue guardando idCiudad.
+  const departamentoSeleccionado = formulario.idDepartamento || String(
+    ciudadesPorId.get(String(formulario.idCiudad))?.idDepartamento ?? ''
+  )
+
+  const ciudadesDelDepartamento = catalogoCiudades.filter(
+    item => String(item.idDepartamento) === departamentoSeleccionado
+  )
+
   const clientesFiltrados = clientes.filter(cliente => {
     const texto = [
       cliente.nombre,
       cliente.documento,
       cliente.correo,
-      cliente.telefono
+      cliente.telefono,
+      nombreCiudad(cliente.idCiudad)
     ].join(' ').toLowerCase()
 
     return (
@@ -78,14 +144,15 @@ export default function ClientesPage() {
     )
   })
 
-  const ciudades = [
+  // El filtro solo muestra ciudades que tienen clientes registrados.
+  const ciudadesConClientes = [
     ...new Set(
       clientes
         .map(cliente => cliente.idCiudad)
         .filter(id => id != null)
         .map(String)
     )
-  ]
+  ].sort((a, b) => nombreCiudad(a).localeCompare(nombreCiudad(b), 'es'))
 
   const porPagina = 5
   const totalPaginas = Math.max(
@@ -112,7 +179,12 @@ export default function ClientesPage() {
       nombre: cliente.nombre || '',
       telefono: cliente.telefono || '',
       correo: cliente.correo || '',
-      idCiudad: String(cliente.idCiudad ?? '1')
+      // Si el catálogo todavía está cargando, el departamento se
+      // deducirá de la ciudad cuando la respuesta esté disponible.
+      idDepartamento: String(
+        ciudadesPorId.get(String(cliente.idCiudad))?.idDepartamento ?? ''
+      ),
+      idCiudad: String(cliente.idCiudad ?? '')
     })
     setError('')
     setModal('editar')
@@ -145,9 +217,19 @@ export default function ClientesPage() {
 
   async function guardarCliente(evento) {
     evento.preventDefault()
-    setGuardando(true)
     setError('')
     setMensaje('')
+
+    const ciudadSeleccionada = ciudadesPorId.get(String(formulario.idCiudad))
+    if (
+      !ciudadSeleccionada ||
+      String(ciudadSeleccionada.idDepartamento) !== departamentoSeleccionado
+    ) {
+      setError('Selecciona un departamento y una ciudad válidos.')
+      return
+    }
+
+    setGuardando(true)
 
     const datos = {
       documento: formulario.documento.trim(),
@@ -243,6 +325,15 @@ export default function ClientesPage() {
         </p>
       )}
 
+      {errorUbicaciones && (
+        <p className="clientes-error" role="alert">
+          No se pudieron cargar las ubicaciones: {errorUbicaciones}{' '}
+          <button type="button" onClick={cargarUbicaciones}>
+            Reintentar
+          </button>
+        </p>
+      )}
+
       <div className="clientes-filtros">
         <label className="clientes-busqueda">
           <Search size={19} />
@@ -268,19 +359,32 @@ export default function ClientesPage() {
             }}
           >
             <option value="">Todas las ciudades</option>
-            {ciudades.map(id => (
-              <option key={id} value={id}>
-                {id === '1' ? 'Medellín' : `Ciudad ${id}`}
-              </option>
-            ))}
+            {ciudadesConClientes.map(id => {
+              const registro = ciudadesPorId.get(id)
+              const departamento = registro
+                ? nombreDepartamento(registro.idDepartamento)
+                : ''
+
+              return (
+                <option key={id} value={id}>
+                  {nombreCiudad(id)}
+                  {registro && departamento !== 'No disponible'
+                    ? ` — ${departamento}`
+                    : ''}
+                </option>
+              )
+            })}
           </select>
         </label>
 
         <button
           className="clientes-actualizar"
           type="button"
-          onClick={cargarClientes}
-          disabled={cargando}
+          onClick={() => {
+            cargarClientes()
+            cargarUbicaciones()
+          }}
+          disabled={cargando || cargandoUbicaciones}
         >
           <RefreshCw size={18} />
           Actualizar
@@ -315,6 +419,10 @@ export default function ClientesPage() {
                       <span className="clientes-nombre">
                         {cliente.nombre}
                       </span>
+                      <div className="clientes-ciudad-texto">
+                        <MapPin size={13} aria-hidden="true" />
+                        <span>{nombreCiudad(cliente.idCiudad)}</span>
+                      </div>
                     </td>
                     <td>{cliente.telefono || '—'}</td>
                     <td>{cliente.correo || '—'}</td>
@@ -422,6 +530,15 @@ export default function ClientesPage() {
               </p>
             )}
 
+            {errorUbicaciones && (modal === 'nuevo' || modal === 'editar') && (
+              <p className="clientes-error" role="alert">
+                No se pudo cargar el catálogo: {errorUbicaciones}{' '}
+                <button type="button" onClick={cargarUbicaciones}>
+                  Reintentar
+                </button>
+              </p>
+            )}
+
             {(modal === 'nuevo' || modal === 'editar') && (
               <form
                 className="clientes-formulario"
@@ -473,20 +590,64 @@ export default function ClientesPage() {
                   </label>
 
                   <label>
-                    ID de ciudad *
-                    <input
-                      type="number"
-                      min="1"
+                    Departamento *
+                    <select
+                      required
+                      value={departamentoSeleccionado}
+                      disabled={cargandoUbicaciones || !departamentos.length}
+                      onChange={e => setFormulario(actual => ({
+                        ...actual,
+                        idDepartamento: e.target.value,
+                        idCiudad: ''
+                      }))}
+                    >
+                      <option value="">
+                        {cargandoUbicaciones
+                          ? 'Cargando departamentos...'
+                          : 'Selecciona un departamento'}
+                      </option>
+                      {departamentos.map(departamento => (
+                        <option
+                          key={departamento.idDepartamento}
+                          value={String(departamento.idDepartamento)}
+                        >
+                          {departamento.nombreDepartamento}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    Ciudad *
+                    <select
                       required
                       value={formulario.idCiudad}
-                      onChange={e =>
-                        cambiarCampo('idCiudad', e.target.value)
-                      }
-                    />
-                    <small>
-                      En tu base de datos de prueba,
-                      Medellín corresponde al ID 1.
-                    </small>
+                      disabled={cargandoUbicaciones || !departamentoSeleccionado}
+                      onChange={e => cambiarCampo('idCiudad', e.target.value)}
+                    >
+                      <option value="">
+                        {!departamentoSeleccionado
+                          ? 'Selecciona primero un departamento'
+                          : 'Selecciona una ciudad'}
+                      </option>
+                      {ciudadesDelDepartamento.map(item => (
+                        <option key={item.idCiudad} value={String(item.idCiudad)}>
+                          {item.nombreCiudad}
+                        </option>
+                      ))}
+                    </select>
+                    {departamentoSeleccionado && !ciudadesDelDepartamento.length &&
+                      !cargandoUbicaciones && (
+                        <small>No hay ciudades registradas para este departamento.</small>
+                      )}
+                    {modal === 'editar' && formulario.idCiudad &&
+                      !ciudadesPorId.has(String(formulario.idCiudad)) &&
+                      !cargandoUbicaciones && (
+                        <small>
+                          La ciudad guardada no está en el catálogo actual.
+                          Verifica los datos antes de guardar.
+                        </small>
+                      )}
                   </label>
                 </div>
 
@@ -503,7 +664,7 @@ export default function ClientesPage() {
                   <button
                     type="submit"
                     className="clientes-guardar"
-                    disabled={guardando}
+                    disabled={guardando || cargandoUbicaciones || !catalogoCiudades.length}
                   >
                     <Save size={17} />
                     {guardando ? 'Guardando...' : 'Guardar cliente'}
@@ -531,8 +692,14 @@ export default function ClientesPage() {
                   {seleccionado.correo || '—'}
                 </p>
                 <p>
-                  <strong>ID de ciudad:</strong>
-                  {seleccionado.idCiudad ?? '—'}
+                  <strong>Departamento:</strong>
+                  {nombreDepartamento(
+                    ciudadesPorId.get(String(seleccionado.idCiudad))?.idDepartamento
+                  )}
+                </p>
+                <p>
+                  <strong>Ciudad:</strong>
+                  {nombreCiudad(seleccionado.idCiudad)}
                 </p>
 
                 <div className="clientes-modal-botones">

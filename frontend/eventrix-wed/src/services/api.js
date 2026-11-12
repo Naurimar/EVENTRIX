@@ -1,4 +1,9 @@
+
 const API_BASE = 'http://localhost:8080/api/v1'
+
+// ==========================================
+// FUNCIÓN GENERAL PARA PETICIONES HTTP
+// ==========================================
 
 export async function apiRequest(ruta, opciones = {}) {
   const token = sessionStorage.getItem('eventrix_token')
@@ -39,50 +44,110 @@ export async function apiRequest(ruta, opciones = {}) {
   return datos
 }
 
+// ==========================================
+// MÓDULO DE CLIENTES
+// ==========================================
+
 export const clientesApi = {
   listar: () => apiRequest('/clientes'),
+
   buscar: (id) => apiRequest(`/clientes/${id}`),
-  crear: (datos) => apiRequest('/clientes', {
-    method: 'POST',
-    body: JSON.stringify(datos),
-  }),
-  actualizar: (id, datos) => apiRequest(`/clientes/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(datos),
-  }),
-  eliminar: (id) => apiRequest(`/clientes/${id}`, {
-    method: 'DELETE',
-  }),
+
+  crear: (datos) =>
+    apiRequest('/clientes', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
+
+  actualizar: (id, datos) =>
+    apiRequest(`/clientes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(datos),
+    }),
+
+  eliminar: (id) =>
+    apiRequest(`/clientes/${id}`, {
+      method: 'DELETE',
+    }),
 }
+
+// ==========================================
+// MÓDULO DE EVENTOS
+// ==========================================
 
 export const eventosApi = {
   listar: () => apiRequest('/eventos'),
+
   buscar: (id) => apiRequest(`/eventos/${id}`),
-  crear: (datos) => apiRequest('/eventos', {
-    method: 'POST',
-    body: JSON.stringify(datos),
-  }),
-  actualizar: (id, datos) => apiRequest(`/eventos/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(datos),
-  }),
-  eliminar: (id) => apiRequest(`/eventos/${id}`, {
-    method: 'DELETE',
-  }),
+
+  crear: (datos) =>
+    apiRequest('/eventos', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
+
+  actualizar: (id, datos) =>
+    apiRequest(`/eventos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(datos),
+    }),
+
+  eliminar: (id) =>
+    apiRequest(`/eventos/${id}`, {
+      method: 'DELETE',
+    }),
 }
+
+// ==========================================
+// MÓDULO DE ESPACIOS
+// ==========================================
 
 export const espaciosApi = {
   listar: () => apiRequest('/espacios'),
+
   buscar: (id) => apiRequest(`/espacios/${id}`),
-  crear: (datos) => apiRequest('/espacios', {
-    method: 'POST',
-    body: JSON.stringify(datos),
-  }),
-  actualizar: (id, datos) => apiRequest(`/espacios/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(datos),
-  }),
-  eliminar: (id) => apiRequest(`/espacios/${id}`, {
-    method: 'DELETE',
-  }),
+
+  crear: (datos) =>
+    apiRequest('/espacios', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
+
+  actualizar: (id, datos) =>
+    apiRequest(`/espacios/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(datos),
+    }),
+
+  eliminar: (id) =>
+    apiRequest(`/espacios/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// ==========================================
+// MÓDULO DE UBICACIONES
+// DEPARTAMENTOS Y CIUDADES
+// ==========================================
+
+export const ubicacionesApi = {
+
+  // Consultar todos los departamentos
+  listarDepartamentos: () =>
+    apiRequest('/ubicaciones/departamentos'),
+
+  // Consultar todas las ciudades o filtrarlas
+  // por el ID del departamento seleccionado
+  listarCiudades: (idDepartamento = null) => {
+    const filtro =
+      idDepartamento !== null &&
+      idDepartamento !== undefined &&
+      idDepartamento !== ''
+
+    const ruta = filtro
+      ? `/ubicaciones/ciudades?idDepartamento=${encodeURIComponent(idDepartamento)}`
+      : '/ubicaciones/ciudades'
+
+    return apiRequest(ruta)
+  },
 }

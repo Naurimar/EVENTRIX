@@ -3,13 +3,13 @@ import {
   Layers3, Plus, Search, Eye, Pencil, Trash2, X, Save,
   ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, MapPin
 } from 'lucide-react'
-import { espaciosApi } from '../../services/api'
+import { espaciosApi, ubicacionesApi } from '../../services/api'
 import './EspaciosPage.css'
 
 const POR_PAGINA = 6
 const nuevoFormulario = () => ({
   nombre: '', tipo: '', capacidad: '', ubicacion: '',
-  tarifa: '', disponible: true, idCiudad: '1'
+  tarifa: '', disponible: true, idDepartamento: '', idCiudad: ''
 })
 
 function dinero(valor) {
@@ -34,6 +34,30 @@ export default function EspaciosPage() {
   const [modal, setModal] = useState('')
   const [seleccionado, setSeleccionado] = useState(null)
   const [formulario, setFormulario] = useState(nuevoFormulario)
+  const [departamentos, setDepartamentos] = useState([])
+  const [catalogoCiudades, setCatalogoCiudades] = useState([])
+  const [cargandoUbicaciones, setCargandoUbicaciones] = useState(true)
+  const [errorUbicaciones, setErrorUbicaciones] = useState('')
+
+  async function cargarUbicaciones() {
+    setCargandoUbicaciones(true)
+    setErrorUbicaciones('')
+    try {
+      const [datosDepartamentos, datosCiudades] = await Promise.all([
+        ubicacionesApi.listarDepartamentos(),
+        ubicacionesApi.listarCiudades()
+      ])
+      if (!Array.isArray(datosDepartamentos) || !Array.isArray(datosCiudades)) {
+        throw new Error('El catálogo de ubicaciones devolvió datos inesperados.')
+      }
+      setDepartamentos(datosDepartamentos)
+      setCatalogoCiudades(datosCiudades)
+    } catch (err) {
+      setErrorUbicaciones(err.message || 'No fue posible consultar departamentos y ciudades.')
+    } finally {
+      setCargandoUbicaciones(false)
+    }
+  }
 
   async function cargarEspacios() {
     setCargando(true)
@@ -57,6 +81,38 @@ export default function EspaciosPage() {
     return () => { activo = false }
   }, [])
 
+  useEffect(() => {
+    cargarUbicaciones()
+  }, [])
+
+  const ciudadesPorId = useMemo(
+    () => new Map(catalogoCiudades.map(item => [String(item.idCiudad), item])),
+    [catalogoCiudades]
+  )
+  const departamentosPorId = useMemo(
+    () => new Map(departamentos.map(item => [String(item.idDepartamento), item])),
+    [departamentos]
+  )
+
+  function nombreCiudad(id) {
+    if (id == null || id === '') return '—'
+    return ciudadesPorId.get(String(id))?.nombreCiudad || `Ciudad no encontrada (ID ${id})`
+  }
+
+  function nombreDepartamento(id) {
+    if (id == null || id === '') return '—'
+    return departamentosPorId.get(String(id))?.nombreDepartamento || 'No disponible'
+  }
+
+  // El departamento solo se usa para seleccionar; el backend guarda idCiudad.
+  // Al editar, se deduce del catálogo para conservar la ubicación actual.
+  const departamentoSeleccionado = formulario.idDepartamento || String(
+    ciudadesPorId.get(String(formulario.idCiudad))?.idDepartamento ?? ''
+  )
+  const ciudadesDelDepartamento = catalogoCiudades.filter(
+    item => String(item.idDepartamento) === departamentoSeleccionado
+  ).sort((a, b) => a.nombreCiudad.localeCompare(b.nombreCiudad, 'es'))
+
   const tipos = useMemo(() =>
     [...new Set(espacios.map(e => e.tipo).filter(Boolean))].sort(), [espacios]
   )
@@ -64,13 +120,19 @@ export default function EspaciosPage() {
   const filtrados = useMemo(() => {
     const q = busqueda.toLowerCase().trim()
     return espacios.filter(espacio => {
-      const contenido = [espacio.nombre, espacio.tipo, espacio.ubicacion, espacio.idCiudad]
-        .join(' ').toLowerCase()
+      const registroCiudad = ciudadesPorId.get(String(espacio.idCiudad))
+      const nombreDepartamentoActual = registroCiudad
+        ? departamentosPorId.get(String(registroCiudad.idDepartamento))?.nombreDepartamento
+        : ''
+      const contenido = [
+        espacio.nombre, espacio.tipo, espacio.ubicacion,
+        espacio.idCiudad, registroCiudad?.nombreCiudad, nombreDepartamentoActual
+      ].join(' ').toLowerCase()
       return contenido.includes(q)
         && (!tipo || espacio.tipo === tipo)
         && (disponibilidad === '' || String(espacio.disponible) === disponibilidad)
     })
-  }, [espacios, busqueda, tipo, disponibilidad])
+  }, [espacios, busqueda, tipo, disponibilidad, ciudadesPorId, departamentosPorId])
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
   const paginaActual = Math.min(pagina, totalPaginas)
@@ -92,7 +154,10 @@ export default function EspaciosPage() {
       ubicacion: espacio.ubicacion ?? '',
       tarifa: espacio.tarifa ?? '',
       disponible: espacio.disponible === true,
-      idCiudad: String(espacio.idCiudad ?? '1')
+      idDepartamento: String(
+        ciudadesPorId.get(String(espacio.idCiudad))?.idDepartamento ?? ''
+      ),
+      idCiudad: String(espacio.idCiudad ?? '')
     })
     setErrorModal('')
     setModal('editar')
@@ -115,11 +180,30 @@ export default function EspaciosPage() {
     setFormulario(actual => ({ ...actual, [campo]: valor }))
   }
 
+  function cambiarDepartamento(idDepartamento) {
+    // No dejar seleccionada una ciudad del departamento anterior.
+    setFormulario(actual => ({
+      ...actual,
+      idDepartamento,
+      idCiudad: ''
+    }))
+  }
+
   async function guardar(evento) {
     evento.preventDefault()
-    setGuardando(true)
     setErrorModal('')
     setMensaje('')
+
+    const ciudadSeleccionada = ciudadesPorId.get(String(formulario.idCiudad))
+    if (
+      !ciudadSeleccionada ||
+      String(ciudadSeleccionada.idDepartamento) !== departamentoSeleccionado
+    ) {
+      setErrorModal('Selecciona un departamento y una ciudad válidos.')
+      return
+    }
+
+    setGuardando(true)
     const datos = {
       nombre: formulario.nombre.trim(),
       tipo: formulario.tipo.trim(),
@@ -183,6 +267,12 @@ export default function EspaciosPage() {
 
       {mensaje && <div className="espacios-exito" role="status">{mensaje}<button type="button" onClick={() => setMensaje('')} aria-label="Cerrar mensaje"><X size={16} /></button></div>}
       {error && <p className="espacios-error" role="alert">{error}</p>}
+      {errorUbicaciones && !modal && (
+        <p className="espacios-error" role="alert">
+          No se pudieron cargar las ubicaciones: {errorUbicaciones}{' '}
+          <button type="button" onClick={cargarUbicaciones}>Reintentar</button>
+        </p>
+      )}
 
       <div className="espacios-filtros">
         <label className="espacios-busqueda">
@@ -198,7 +288,7 @@ export default function EspaciosPage() {
           <option value="true">Disponible</option>
           <option value="false">No disponible</option>
         </select>
-        <button type="button" className="espacios-refrescar" title="Actualizar" aria-label="Actualizar espacios" onClick={cargarEspacios} disabled={cargando}><RefreshCw size={19}/></button>
+        <button type="button" className="espacios-refrescar" title="Actualizar" aria-label="Actualizar espacios" onClick={() => { cargarEspacios(); cargarUbicaciones() }} disabled={cargando || cargandoUbicaciones}><RefreshCw size={19}/></button>
       </div>
 
       <div className="espacios-tabla-tarjeta">
@@ -213,7 +303,13 @@ export default function EspaciosPage() {
                     <td className="espacios-nombre">{espacio.nombre}</td>
                     <td>{espacio.tipo}</td>
                     <td>{espacio.capacidad ?? '—'}</td>
-                    <td>{espacio.ubicacion || '—'}</td>
+                    <td>
+                      <div>{espacio.ubicacion || '—'}</div>
+                      <small style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, color: '#756783' }}>
+                        <MapPin size={13} aria-hidden="true" />
+                        {nombreCiudad(espacio.idCiudad)}
+                      </small>
+                    </td>
                     <td>{dinero(espacio.tarifa)}</td>
                     <td><span className={`espacio-estado ${espacio.disponible ? 'disponible' : 'ocupado'}`}>{espacio.disponible ? 'Disponible' : 'No disponible'}</span></td>
                     <td><div className="espacios-acciones">
@@ -243,6 +339,12 @@ export default function EspaciosPage() {
             <button type="button" aria-label="Cerrar" disabled={guardando} onClick={cerrarModal}><X size={22}/></button>
           </div>
           {errorModal && <p className="espacios-error" role="alert">{errorModal}</p>}
+          {errorUbicaciones && (modal === 'nuevo' || modal === 'editar') && (
+            <p className="espacios-error" role="alert">
+              No se pudo cargar el catálogo: {errorUbicaciones}{' '}
+              <button type="button" onClick={cargarUbicaciones}>Reintentar</button>
+            </p>
+          )}
           {(modal === 'nuevo' || modal === 'editar') && <form onSubmit={guardar}>
             <div className="espacios-campos">
               <label>Nombre del espacio *<input required maxLength={100} value={formulario.nombre} onChange={e => cambiar('nombre', e.target.value)}/></label>
@@ -250,10 +352,52 @@ export default function EspaciosPage() {
               <label>Capacidad (personas) *<input required type="number" min="0" step="1" value={formulario.capacidad} onChange={e => cambiar('capacidad', e.target.value)}/></label>
               <label>Ubicación<input maxLength={100} value={formulario.ubicacion} onChange={e => cambiar('ubicacion', e.target.value)}/></label>
               <label>Tarifa (COP)<input type="number" min="0" step="0.01" value={formulario.tarifa} onChange={e => cambiar('tarifa', e.target.value)}/></label>
-              <label>Ciudad (ID) *<input required type="number" min="1" step="1" value={formulario.idCiudad} onChange={e => cambiar('idCiudad', e.target.value)}/><small>Debe corresponder a una ciudad existente en la base de datos.</small></label>
+              <label>
+                Departamento *
+                <select
+                  required
+                  value={departamentoSeleccionado}
+                  disabled={cargandoUbicaciones || !!errorUbicaciones}
+                  onChange={e => cambiarDepartamento(e.target.value)}
+                >
+                  <option value="">Selecciona un departamento</option>
+                  {[...departamentos]
+                    .sort((a, b) => a.nombreDepartamento.localeCompare(b.nombreDepartamento, 'es'))
+                    .map(departamento => (
+                      <option key={departamento.idDepartamento} value={String(departamento.idDepartamento)}>
+                        {departamento.nombreDepartamento}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Ciudad *
+                <select
+                  required
+                  value={formulario.idCiudad}
+                  disabled={!departamentoSeleccionado || cargandoUbicaciones || !!errorUbicaciones}
+                  onChange={e => cambiar('idCiudad', e.target.value)}
+                >
+                  <option value="">Selecciona una ciudad</option>
+                  {ciudadesDelDepartamento.map(registro => (
+                    <option key={registro.idCiudad} value={String(registro.idCiudad)}>
+                      {registro.nombreCiudad}
+                    </option>
+                  ))}
+                </select>
+                <small>
+                  {cargandoUbicaciones
+                    ? 'Cargando ciudades...'
+                    : !departamentoSeleccionado
+                      ? 'Primero selecciona un departamento.'
+                      : ciudadesDelDepartamento.length === 0
+                        ? 'No hay ciudades disponibles para este departamento.'
+                        : 'Se guardará automáticamente el ID de la ciudad seleccionada.'}
+                </small>
+              </label>
               <label>Disponibilidad<select value={String(formulario.disponible)} onChange={e => cambiar('disponible', e.target.value === 'true')}><option value="true">Disponible</option><option value="false">No disponible</option></select></label>
             </div>
-            <div className="espacios-modal-botones"><button type="button" className="secundario" onClick={cerrarModal} disabled={guardando}>Cancelar</button><button type="submit" className="primario" disabled={guardando}><Save size={17}/>{guardando ? 'Guardando...' : 'Guardar espacio'}</button></div>
+            <div className="espacios-modal-botones"><button type="button" className="secundario" onClick={cerrarModal} disabled={guardando}>Cancelar</button><button type="submit" className="primario" disabled={guardando || cargandoUbicaciones || !!errorUbicaciones || !formulario.idCiudad}><Save size={17}/>{guardando ? 'Guardando...' : 'Guardar espacio'}</button></div>
           </form>}
           {modal === 'detalle' && seleccionado && <>
             <div className="espacios-detalle">
@@ -263,7 +407,16 @@ export default function EspaciosPage() {
               <p><strong>Ubicación</strong>{seleccionado.ubicacion || '—'}</p>
               <p><strong>Tarifa</strong>{dinero(seleccionado.tarifa)}</p>
               <p><strong>Disponibilidad</strong>{seleccionado.disponible ? 'Disponible' : 'No disponible'}</p>
-              <p><strong>Ciudad (ID)</strong><span><MapPin size={15} /> {seleccionado.idCiudad ?? '—'}</span></p>
+              <p>
+                <strong>Ciudad</strong>
+                <span>
+                  <MapPin size={15} aria-hidden="true" />
+                  {nombreCiudad(seleccionado.idCiudad)}
+                  {ciudadesPorId.has(String(seleccionado.idCiudad))
+                    ? ` — ${nombreDepartamento(ciudadesPorId.get(String(seleccionado.idCiudad)).idDepartamento)}`
+                    : ''}
+                </span>
+              </p>
             </div>
             <div className="espacios-modal-botones"><button type="button" className="secundario" onClick={cerrarModal}>Cerrar</button></div>
           </>}
