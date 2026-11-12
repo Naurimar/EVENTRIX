@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import {
   CalendarPlus,
@@ -14,32 +13,30 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-import './Reservas.css';
+import { apiFetch } from '../services/api';
+import '../styles/Reservas.css';
 
-const STORAGE_KEY = 'eventrix_reservas';
+const API_RESERVAS = 'http://localhost:8080/api/reservas';
+const API_EVENTOS = 'http://localhost:8080/api/v1/eventos';
+const API_ESPACIOS = 'http://localhost:8080/api/v1/espacios';
+const API_CLIENTES = 'http://localhost:8080/api/v1/clientes';
 
 const formularioInicial = {
-  cliente: '',
-  nombreEvento: '',
-  fecha: '',
-  hora: '',
-  invitados: '',
-  lugar: '',
-  presupuesto: '',
+  idEvento: '',
+  idEspacio: '',
+  fechaInicio: '',
+  fechaFin: '',
   estado: 'Pendiente',
+  costoTotal: '',
 };
 
-function cargarReservas() {
-  try {
-    const datosGuardados = localStorage.getItem(STORAGE_KEY);
-    return datosGuardados ? JSON.parse(datosGuardados) : [];
-  } catch {
-    return [];
-  }
-}
-
 function Reservas() {
-  const [reservas, setReservas] = useState(cargarReservas);
+  const [reservas, setReservas] = useState([]);
+  const [eventos, setEventos] = useState([]);
+  const [espacios, setEspacios] = useState([]);
+  const [clientes, setClientes] = useState([]);
+
+  const [cargando, setCargando] = useState(true);
   const [formulario, setFormulario] = useState(formularioInicial);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('Todos');
@@ -49,9 +46,6 @@ function Reservas() {
   const [mensajeGeneral, setMensajeGeneral] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('exito');
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
-  }, [reservas]);
   // OCULTAR NOTIFICACIONES AUTOMÁTICAMENTE
   useEffect(() => {
     if (!mensajeGeneral) return;
@@ -63,13 +57,84 @@ function Reservas() {
     return () => clearTimeout(temporizador);
   }, [mensajeGeneral]);
 
+  // CARGAR DATOS DESDE EL BACKEND
+  useEffect(() => {
+    const cargarDatos = async () => {
+      setCargando(true);
+
+      try {
+        const [
+          respuestaReservas,
+          respuestaEventos,
+          respuestaEspacios,
+          respuestaClientes,
+        ] = await Promise.all([
+          apiFetch(API_RESERVAS),
+          apiFetch(API_EVENTOS),
+          apiFetch(API_ESPACIOS),
+          apiFetch(API_CLIENTES),
+        ]);
+
+        if (
+          !respuestaReservas.ok ||
+          !respuestaEventos.ok ||
+          !respuestaEspacios.ok ||
+          !respuestaClientes.ok
+        ) {
+          throw new Error('No fue posible consultar todos los datos.');
+        }
+
+        const [
+          datosReservas,
+          datosEventos,
+          datosEspacios,
+          datosClientes,
+        ] = await Promise.all([
+          respuestaReservas.json(),
+          respuestaEventos.json(),
+          respuestaEspacios.json(),
+          respuestaClientes.json(),
+        ]);
+
+        setReservas(Array.isArray(datosReservas) ? datosReservas : []);
+        setEventos(Array.isArray(datosEventos) ? datosEventos : []);
+        setEspacios(Array.isArray(datosEspacios) ? datosEspacios : []);
+        setClientes(Array.isArray(datosClientes) ? datosClientes : []);
+      } catch (error) {
+        console.error('Error al cargar los datos de reservas:', error);
+        setMensajeGeneral('No fue posible cargar los datos del servidor.');
+        setTipoMensaje('error');
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarDatos();
+  }, []);
+
+  // BUSCAR Y FILTRAR RESERVAS
   const reservasFiltradas = reservas.filter((reserva) => {
     const texto = busqueda.toLowerCase();
 
-    const coincideBusqueda =
-      reserva.cliente.toLowerCase().includes(texto) ||
-      reserva.nombreEvento.toLowerCase().includes(texto) ||
-      reserva.lugar.toLowerCase().includes(texto);
+    const evento = eventos.find(
+      (item) => Number(item.idEvento) === Number(reserva.idEvento)
+    );
+
+    const espacio = espacios.find(
+      (item) => Number(item.idEspacio) === Number(reserva.idEspacio)
+    );
+
+    const cliente = clientes.find(
+      (item) => Number(item.idCliente) === Number(evento?.idCliente)
+    );
+
+    const coincideBusqueda = [
+      cliente?.nombre,
+      evento?.nombre,
+      espacio?.nombre,
+    ].some((valor) =>
+      String(valor || '').toLowerCase().includes(texto)
+    );
 
     const coincideEstado =
       filtroEstado === 'Todos' || reserva.estado === filtroEstado;
@@ -77,6 +142,7 @@ function Reservas() {
     return coincideBusqueda && coincideEstado;
   });
 
+  // ACTUALIZAR CAMPOS DEL FORMULARIO
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
 
@@ -86,64 +152,119 @@ function Reservas() {
     }));
   };
 
+  // LIMPIAR FORMULARIO
   const limpiarFormulario = () => {
     setFormulario(formularioInicial);
     setEditandoId(null);
     setMostrarFormulario(false);
   };
 
-  const guardarReserva = (evento) => {
+  // GUARDAR O ACTUALIZAR RESERVA EN EL BACKEND
+  const guardarReserva = async (evento) => {
     evento.preventDefault();
 
-    const nuevaReserva = {
-      ...formulario,
-      invitados: Number(formulario.invitados),
-      presupuesto: Number(formulario.presupuesto),
-    };
-    if (editandoId !== null) {
-      setReservas((anteriores) =>
-        anteriores.map((reserva) =>
-          reserva.id === editandoId
-            ? { ...nuevaReserva, id: editandoId }
-            : reserva
-        )
-      );
+    const eventoSeleccionado = eventos.find(
+      (item) => Number(item.idEvento) === Number(formulario.idEvento)
+    );
 
-      setTipoMensaje('exito');
-      setMensajeGeneral('La reserva se actualizó correctamente.');
+    const espacioSeleccionado = espacios.find(
+      (item) => Number(item.idEspacio) === Number(formulario.idEspacio)
+    );
 
-    } else {
-      setReservas((anteriores) => [
-        ...anteriores,
-        {
-          ...nuevaReserva,
-          id: Date.now(),
-        },
-      ]);
-
-      setTipoMensaje('exito');
-      setMensajeGeneral('La reserva se registró correctamente.');
+    if (!eventoSeleccionado) {
+      setTipoMensaje('error');
+      setMensajeGeneral('Debes seleccionar un evento.');
+      return;
     }
 
-    limpiarFormulario();
+    if (!espacioSeleccionado || espacioSeleccionado.disponible !== true) {
+      setTipoMensaje('error');
+      setMensajeGeneral('Debes seleccionar un espacio disponible.');
+      return;
+    }
 
+    if (
+      !formulario.fechaInicio ||
+      !formulario.fechaFin ||
+      new Date(formulario.fechaFin) <= new Date(formulario.fechaInicio)
+    ) {
+      setTipoMensaje('error');
+      setMensajeGeneral(
+        'La fecha de finalización debe ser posterior al inicio.'
+      );
+      return;
+    }
 
-    limpiarFormulario();
+    const nuevaReserva = {
+      idEvento: Number(formulario.idEvento),
+      idEspacio: Number(formulario.idEspacio),
+      fechaInicio: formulario.fechaInicio,
+      fechaFin: formulario.fechaFin,
+      estado: formulario.estado,
+      costoTotal: espacioSeleccionado.tarifa ?? null,
+    };
+
+    try {
+      const respuesta = await apiFetch(
+        editandoId !== null
+          ? `${API_RESERVAS}/${editandoId}`
+          : API_RESERVAS,
+        {
+          method: editandoId !== null ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(nuevaReserva),
+        }
+      );
+
+      if (!respuesta.ok) {
+        throw new Error(`Error HTTP ${respuesta.status}`);
+      }
+
+      const respuestaReservas = await apiFetch(API_RESERVAS);
+
+      if (!respuestaReservas.ok) {
+        throw new Error('No fue posible actualizar la lista de reservas.');
+      }
+
+      const datosReservas = await respuestaReservas.json();
+
+      setReservas(Array.isArray(datosReservas) ? datosReservas : []);
+
+      setTipoMensaje('exito');
+      setMensajeGeneral(
+        editandoId !== null
+          ? 'La reserva se actualizó correctamente.'
+          : 'La reserva se registró correctamente.'
+      );
+
+      limpiarFormulario();
+    } catch (error) {
+      console.error('Error al guardar la reserva:', error);
+      setTipoMensaje('error');
+      setMensajeGeneral(
+        'No fue posible guardar la reserva en el servidor.'
+      );
+    }
   };
 
+  // EDITAR RESERVA
   const editarReserva = (reserva) => {
     setFormulario({
-      cliente: reserva.cliente,
-      nombreEvento: reserva.nombreEvento,
-      fecha: reserva.fecha,
-      hora: reserva.hora,
-      invitados: String(reserva.invitados),
-      lugar: reserva.lugar,
-      presupuesto: String(reserva.presupuesto),
-      estado: reserva.estado,
+      idEvento: String(reserva.idEvento ?? ''),
+      idEspacio: String(reserva.idEspacio ?? ''),
+      fechaInicio: reserva.fechaInicio
+        ? reserva.fechaInicio.slice(0, 16)
+        : '',
+      fechaFin: reserva.fechaFin
+        ? reserva.fechaFin.slice(0, 16)
+        : '',
+      estado: reserva.estado ?? 'Pendiente',
+      costoTotal: reserva.costoTotal ?? '',
     });
 
-    setEditandoId(reserva.id);
+    setEditandoId(reserva.idReserva);
     setMostrarFormulario(true);
   };
 
@@ -152,36 +273,76 @@ function Reservas() {
     setConfirmacionEliminar(id);
   };
 
-  // CONFIRMAR ELIMINACIÓN
-  const confirmarEliminacion = () => {
+  // CONFIRMAR ELIMINACIÓN EN EL BACKEND
+  const confirmarEliminacion = async () => {
     if (confirmacionEliminar === null) return;
 
-    setReservas((anteriores) =>
-      anteriores.filter((reserva) => reserva.id !== confirmacionEliminar)
-    );
+    try {
+      const respuesta = await apiFetch(
+        `${API_RESERVAS}/${confirmacionEliminar}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
-    setConfirmacionEliminar(null);
-    setTipoMensaje('exito');
-    setMensajeGeneral('La reserva se eliminó correctamente.');
+      if (!respuesta.ok) {
+        if (respuesta.status === 409) {
+          throw new Error(
+            'No se puede eliminar esta reserva porque tiene información relacionada.'
+          );
+        }
+
+        throw new Error(`Error HTTP ${respuesta.status}`);
+      }
+
+      const respuestaReservas = await apiFetch(API_RESERVAS);
+
+      if (!respuestaReservas.ok) {
+        throw new Error('No fue posible actualizar la lista de reservas.');
+      }
+
+      const datosReservas = await respuestaReservas.json();
+
+      setReservas(Array.isArray(datosReservas) ? datosReservas : []);
+      setConfirmacionEliminar(null);
+      setTipoMensaje('exito');
+      setMensajeGeneral('La reserva se eliminó correctamente.');
+    } catch (error) {
+      console.error('Error al eliminar la reserva:', error);
+      setTipoMensaje('error');
+      setMensajeGeneral(
+        error.message || 'No fue posible eliminar la reserva.'
+      );
+    }
   };
 
-  const formatoMoneda = (valor) =>
-    new Intl.NumberFormat('es-CO', {
+  // FORMATO DE MONEDA
+  const formatoMoneda = (valor) => {
+    if (valor === null || valor === undefined || valor === '') {
+      return 'Sin valor';
+    }
+
+    return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       maximumFractionDigits: 0,
-    }).format(valor);
+    }).format(Number(valor));
+  };
 
-  const formatoFecha = (fecha) => {
+  // FORMATO DE FECHA Y HORA
+  const formatoFechaHora = (fecha) => {
     if (!fecha) return 'Sin fecha';
 
-    return new Date(`${fecha}T00:00:00`).toLocaleDateString('es-CO', {
+    return new Date(fecha).toLocaleString('es-CO', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
+  // CONTADORES
   const totalConfirmadas = reservas.filter(
     (reserva) => reserva.estado === 'Confirmada'
   ).length;
@@ -193,11 +354,10 @@ function Reservas() {
   const totalCanceladas = reservas.filter(
     (reserva) => reserva.estado === 'Cancelada'
   ).length;
-
-  return (
+    return (
     <section className="reservas-module">
 
-      {/* NOTIFICACIONES EVENTRIX */}
+      {/* NOTIFICACIONES */}
       {mensajeGeneral && (
         <div
           className={`eventrix-toast ${tipoMensaje}`}
@@ -220,8 +380,9 @@ function Reservas() {
           </button>
         </div>
       )}
+
+      {/* ENCABEZADO */}
       <div className="reservas-heading">
-        
         <div>
           <h2>Gestión de reservas</h2>
           <p>
@@ -243,6 +404,7 @@ function Reservas() {
         </button>
       </div>
 
+      {/* RESUMEN */}
       <div className="reservas-summary">
         <article className="reservas-summary-card">
           <span>Total de reservas</span>
@@ -265,12 +427,15 @@ function Reservas() {
         </article>
       </div>
 
+      {/* FORMULARIO */}
       {mostrarFormulario && (
         <section className="reservas-form-card">
           <div className="reservas-form-heading">
             <div>
               <h3>
-                {editandoId !== null ? 'Editar reserva' : 'Registrar reserva'}
+                {editandoId !== null
+                  ? 'Editar reserva'
+                  : 'Registrar reserva'}
               </h3>
               <p>Completa la información solicitada.</p>
             </div>
@@ -287,87 +452,124 @@ function Reservas() {
 
           <form onSubmit={guardarReserva}>
             <div className="reservas-form-grid">
+
               <label className="reservas-field">
-                Nombre del cliente *
+                Evento *
+                <select
+                  name="idEvento"
+                  value={formulario.idEvento}
+                  onChange={actualizarCampo}
+                  required
+                >
+                  <option value="">Selecciona un evento</option>
+
+                  {eventos.map((evento) => (
+                    <option
+                      key={evento.idEvento}
+                      value={evento.idEvento}
+                    >
+                      {evento.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="reservas-field">
+                Cliente
                 <input
                   type="text"
-                  name="cliente"
-                  value={formulario.cliente}
-                  onChange={actualizarCampo}
-                  placeholder="Ej. María Rodríguez"
-                  required
+                  value={
+                    clientes.find(
+                      (cliente) =>
+                        Number(cliente.idCliente) ===
+                        Number(
+                          eventos.find(
+                            (evento) =>
+                              Number(evento.idEvento) ===
+                              Number(formulario.idEvento)
+                          )?.idCliente
+                        )
+                    )?.nombre || ''
+                  }
+                  readOnly
+                  placeholder="Se completa al seleccionar el evento"
                 />
               </label>
 
               <label className="reservas-field">
-                Nombre del evento *
-                <input
-                  type="text"
-                  name="nombreEvento"
-                  value={formulario.nombreEvento}
-                  onChange={actualizarCampo}
-                  placeholder="Ej. Boda"
-                  required
-                />
-              </label>
-
-              <label className="reservas-field">
-                Fecha del evento *
-                <input
-                  type="date"
-                  name="fecha"
-                  value={formulario.fecha}
-                  onChange={actualizarCampo}
-                  required
-                />
-              </label>
-
-              <label className="reservas-field">
-                Hora *
-                <input
-                  type="time"
-                  name="hora"
-                  value={formulario.hora}
-                  onChange={actualizarCampo}
-                  required
-                />
-              </label>
-
-              <label className="reservas-field">
-                Cantidad de invitados *
+                Cantidad de invitados
                 <input
                   type="number"
-                  name="invitados"
-                  value={formulario.invitados}
-                  onChange={actualizarCampo}
-                  min="1"
-                  placeholder="Ej. 100"
-                  required
+                  value={
+                    eventos.find(
+                      (evento) =>
+                        Number(evento.idEvento) ===
+                        Number(formulario.idEvento)
+                    )?.numInvitados ?? ''
+                  }
+                  readOnly
+                  placeholder="Se completa automáticamente"
                 />
               </label>
 
               <label className="reservas-field">
-                Lugar del evento *
+                Espacio disponible *
+                <select
+                  name="idEspacio"
+                  value={formulario.idEspacio}
+                  onChange={actualizarCampo}
+                  required
+                >
+                  <option value="">Selecciona un espacio</option>
+
+                  {espacios
+                    .filter((espacio) => espacio.disponible === true)
+                    .map((espacio) => (
+                      <option
+                        key={espacio.idEspacio}
+                        value={espacio.idEspacio}
+                      >
+                        {espacio.nombre} - Capacidad: {espacio.capacidad}
+                      </option>
+                    ))}
+                </select>
+              </label>
+
+              <label className="reservas-field">
+                Fecha y hora de inicio *
                 <input
-                  type="text"
-                  name="lugar"
-                  value={formulario.lugar}
+                  type="datetime-local"
+                  name="fechaInicio"
+                  value={formulario.fechaInicio}
                   onChange={actualizarCampo}
-                  placeholder="Ej. Salón principal"
                   required
                 />
               </label>
 
               <label className="reservas-field">
-                Presupuesto (COP) *
+                Fecha y hora de finalización *
+                <input
+                  type="datetime-local"
+                  name="fechaFin"
+                  value={formulario.fechaFin}
+                  onChange={actualizarCampo}
+                  required
+                />
+              </label>
+
+              <label className="reservas-field">
+                Costo total (COP)
                 <input
                   type="number"
-                  name="presupuesto"
-                  value={formulario.presupuesto}
-                  onChange={actualizarCampo}
-                  min="0"
-                  placeholder="Ej. 5000000"
-                  required
+                  value={
+                    espacios.find(
+                      (espacio) =>
+                        Number(espacio.idEspacio) ===
+                        Number(formulario.idEspacio)
+                    )?.tarifa ?? ''
+                  }
+                  readOnly
+                  placeholder="Tarifa del espacio"
                 />
               </label>
 
@@ -383,6 +585,7 @@ function Reservas() {
                   <option value="Cancelada">Cancelada</option>
                 </select>
               </label>
+
             </div>
 
             <div className="reservas-form-actions">
@@ -394,15 +597,21 @@ function Reservas() {
                 Cancelar
               </button>
 
-              <button type="submit" className="reservas-primary-button">
+              <button
+                type="submit"
+                className="reservas-primary-button"
+              >
                 <Save size={17} />
-                {editandoId !== null ? 'Guardar cambios' : 'Guardar reserva'}
+                {editandoId !== null
+                  ? 'Guardar cambios'
+                  : 'Guardar reserva'}
               </button>
             </div>
           </form>
         </section>
       )}
 
+      {/* LISTADO DE RESERVAS */}
       <section className="reservas-list-card">
         <div className="reservas-list-heading">
           <div>
@@ -413,9 +622,11 @@ function Reservas() {
           <ClipboardList size={23} />
         </div>
 
+        {/* BÚSQUEDA Y FILTROS */}
         <div className="reservas-filters">
           <div className="reservas-search">
             <Search size={18} />
+
             <input
               type="search"
               placeholder="Buscar cliente, evento o lugar..."
@@ -437,7 +648,12 @@ function Reservas() {
           </select>
         </div>
 
-        {reservasFiltradas.length > 0 ? (
+        {/* CARGA */}
+        {cargando ? (
+          <div className="reservas-empty">
+            <p>Cargando reservas...</p>
+          </div>
+        ) : reservasFiltradas.length > 0 ? (
           <div className="reservas-table-container">
             <table className="reservas-table">
               <thead>
@@ -445,67 +661,103 @@ function Reservas() {
                   <th>Cliente / Evento</th>
                   <th>Fecha y hora</th>
                   <th>Invitados</th>
-                  <th>Presupuesto</th>
+                  <th>Costo total</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
 
               <tbody>
-                {reservasFiltradas.map((reserva) => (
-                  <tr key={reserva.id}>
-                    <td>
-                      <div className="reservas-client-cell">
-                        <strong>{reserva.cliente}</strong>
-                        <span>{reserva.nombreEvento}</span>
-                        <small>{reserva.lugar}</small>
-                      </div>
-                    </td>
+                {reservasFiltradas.map((reserva) => {
+                  const evento = eventos.find(
+                    (item) =>
+                      Number(item.idEvento) === Number(reserva.idEvento)
+                  );
 
-                    <td>
-                      <div className="reservas-date-cell">
-                        <strong>{formatoFecha(reserva.fecha)}</strong>
-                        <span>{reserva.hora}</span>
-                      </div>
-                    </td>
+                  const espacio = espacios.find(
+                    (item) =>
+                      Number(item.idEspacio) === Number(reserva.idEspacio)
+                  );
 
-                    <td>{reserva.invitados}</td>
+                  const cliente = clientes.find(
+                    (item) =>
+                      Number(item.idCliente) === Number(evento?.idCliente)
+                  );
 
-                    <td>{formatoMoneda(reserva.presupuesto)}</td>
+                  return (
+                    <tr key={reserva.idReserva}>
+                      <td>
+                        <div className="reservas-client-cell">
+                          <strong>
+                            {cliente?.nombre || 'Cliente no disponible'}
+                          </strong>
 
-                    <td>
-                      <span
-                        className={`reservas-status ${reserva.estado.toLowerCase()}`}
-                      >
-                        {reserva.estado}
-                      </span>
-                    </td>
+                          <span>
+                            {evento?.nombre || 'Evento no disponible'}
+                          </span>
 
-                    <td>
-                      <div className="reservas-actions">
-                        <button
-                          type="button"
-                          className="reservas-edit-button"
-                          onClick={() => editarReserva(reserva)}
-                          aria-label="Editar reserva"
-                          title="Editar"
+                          <small>
+                            {espacio?.nombre || 'Espacio no disponible'}
+                          </small>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div className="reservas-date-cell">
+                          <strong>
+                            {formatoFechaHora(reserva.fechaInicio)}
+                          </strong>
+
+                          <span>
+                            Hasta: {formatoFechaHora(reserva.fechaFin)}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td>
+                        {evento?.numInvitados ?? 'Sin dato'}
+                      </td>
+
+                      <td>
+                        {formatoMoneda(reserva.costoTotal)}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`reservas-status ${(reserva.estado || '').toLowerCase()}`}
                         >
-                          <Pencil size={16} />
-                        </button>
+                          {reserva.estado}
+                        </span>
+                      </td>
 
-                        <button
-                          type="button"
-                          className="reservas-delete-button"
-                          onClick={() => eliminarReserva(reserva.id)}
-                          aria-label="Eliminar reserva"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      <td>
+                        <div className="reservas-actions">
+                          <button
+                            type="button"
+                            className="reservas-edit-button"
+                            onClick={() => editarReserva(reserva)}
+                            aria-label="Editar reserva"
+                            title="Editar"
+                          >
+                            <Pencil size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="reservas-delete-button"
+                            onClick={() =>
+                              eliminarReserva(reserva.idReserva)
+                            }
+                            aria-label="Eliminar reserva"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -529,12 +781,13 @@ function Reservas() {
           </div>
         )}
       </section>
-      {/* VENTANA DE CONFIRMACIÓN EVENTRIX */}
+
+      {/* VENTANA DE CONFIRMACIÓN */}
       {confirmacionEliminar !== null && (
         <div
           className="eventrix-modal-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
+          onMouseDown={(evento) => {
+            if (evento.target === evento.currentTarget) {
               setConfirmacionEliminar(null);
             }
           }}
@@ -582,6 +835,7 @@ function Reservas() {
           </div>
         </div>
       )}
+
     </section>
   );
 }

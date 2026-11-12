@@ -1,5 +1,5 @@
-
 import { useEffect, useState } from 'react';
+import { apiFetch } from '../services/api';
 import {
   Search,
   Users,
@@ -19,7 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 
-import './Proveedores.css';
+import '../styles/Proveedores.css';
 
 const API_PROVEEDORES = 'http://localhost:8080/api/proveedores';
 const API_TIPOS_SERVICIO = `${API_PROVEEDORES}/tipos-servicio`;
@@ -66,7 +66,7 @@ function Proveedores() {
       setCargando(true);
       setError('');
 
-      const respuesta = await fetch(API_PROVEEDORES);
+      const respuesta = await apiFetch(API_PROVEEDORES);
 
       if (!respuesta.ok) {
         throw new Error(`Error HTTP ${respuesta.status}`);
@@ -107,7 +107,7 @@ function Proveedores() {
       setCargandoTipos(true);
       setErrorFormulario('');
 
-      const respuesta = await fetch(API_TIPOS_SERVICIO);
+      const respuesta = await apiFetch(API_TIPOS_SERVICIO);
 
       if (!respuesta.ok) {
         throw new Error(`Error HTTP ${respuesta.status}`);
@@ -216,7 +216,7 @@ function Proveedores() {
 
       const editando = proveedorEditandoId !== null;
 
-      const respuesta = await fetch(
+      const respuesta = await apiFetch(
         editando
           ? `${API_PROVEEDORES}/${proveedorEditandoId}`
           : API_PROVEEDORES,
@@ -282,7 +282,7 @@ function Proveedores() {
       setConfirmacionEstado(null);
       setMensajeGeneral('');
 
-      const respuesta = await fetch(
+      const respuesta = await apiFetch(
         `${API_PROVEEDORES}/${proveedor.idProveedor}/estado?activo=${nuevoEstado}`,
         {
           method: 'PATCH',
@@ -332,7 +332,7 @@ function Proveedores() {
       setConfirmacionEliminar(null);
       setMensajeGeneral('');
 
-      const respuesta = await fetch(
+      const respuesta = await apiFetch(
         `${API_PROVEEDORES}/${proveedor.idProveedor}`,
         {
           method: 'DELETE',

@@ -1,14 +1,19 @@
-
 import {
   LayoutDashboard,
   Users,
   CalendarDays,
   UserRound,
   ChartNoAxesCombined,
+  CalendarRange,
+  ContactRound,
+  Building2,
 } from 'lucide-react';
 
 const menuItems = [
   { id: 'inicio', label: 'Inicio', icon: LayoutDashboard },
+  { id: 'eventos', label: 'Eventos', icon: CalendarRange },
+  { id: 'clientes', label: 'Clientes', icon: ContactRound },
+  { id: 'espacios', label: 'Espacios', icon: Building2 },
   { id: 'reservas', label: 'Reservas', icon: CalendarDays },
   { id: 'invitados', label: 'Invitados', icon: UserRound },
   { id: 'proveedores', label: 'Proveedores', icon: Users },
@@ -20,11 +25,10 @@ function Sidebar({ activePage, onNavigate }) {
     <header className="top-navigation">
       <div className="sidebar-brand">
         <img
-         src="/images/logo-eventrix.png"
-         alt="EVENTRIX"
-         className="logo-eventrix"
-         />
-        
+          src="/images/logo-eventrix.png"
+          alt="EVENTRIX"
+          className="logo-eventrix"
+        />
       </div>
 
       <nav className="sidebar-navigation">

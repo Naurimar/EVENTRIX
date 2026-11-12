@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from 'react';
-
+import { apiFetch } from '../services/api';
 import {
   CalendarDays,
   CalendarCheck,
@@ -13,7 +12,7 @@ import {
   FileDown,
 } from 'lucide-react';
 
-import './Reportes.css';
+import '../styles/Reportes.css';
 
 const API_REPORTES = 'http://localhost:8080/api/reportes/resumen';
 const API_PDF = 'http://localhost:8080/api/reportes/pdf';
@@ -133,7 +132,7 @@ function Reportes() {
       setCargando(true);
       setError('');
 
-      const respuesta = await fetch(API_REPORTES);
+      const respuesta = await apiFetch(API_REPORTES);
 
       if (!respuesta.ok) {
         throw new Error(`Error del servidor: ${respuesta.status}`);
@@ -164,7 +163,7 @@ function Reportes() {
       setDescargandoPdf(true);
       setErrorPdf('');
 
-      const respuesta = await fetch(API_PDF);
+      const respuesta = await apiFetch(API_PDF);
 
       if (!respuesta.ok) {
         throw new Error(

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiFetch } from '../services/api';
 import {
     Search,
     Users,
@@ -20,7 +21,8 @@ import {
     ClipboardList,
 } from 'lucide-react';
 
-import './Invitados.css';
+import '../styles/Invitados.css';
+
 
 const API_INVITADOS = 'http://localhost:8080/api/invitados';
 
@@ -94,7 +96,7 @@ function Invitados() {
         try {
             setCargando(true);
 
-            const respuesta = await fetch(API_INVITADOS);
+            const respuesta = await apiFetch(API_INVITADOS);
             const datos = await leerRespuesta(respuesta);
 
             setInvitados(Array.isArray(datos) ? datos : []);
@@ -114,7 +116,7 @@ function Invitados() {
         try {
             setCargandoEventos(true);
 
-            const respuesta = await fetch(`${API_INVITADOS}/eventos`);
+            const respuesta = await apiFetch(`${API_INVITADOS}/eventos`);
             const datos = await leerRespuesta(respuesta);
 
             setEventos(Array.isArray(datos) ? datos : []);
@@ -142,7 +144,7 @@ function Invitados() {
         }
 
         try {
-            const respuesta = await fetch(
+            const respuesta = await apiFetch(
                 `${API_INVITADOS}/eventos/${idEvento}/mesas`
             );
 
@@ -181,7 +183,7 @@ function Invitados() {
         try {
             setCargandoEvento(true);
 
-            const respuesta = await fetch(
+            const respuesta = await apiFetch(
                 `${API_INVITADOS}/eventos/${idEvento}/invitados`
             );
 
@@ -325,7 +327,7 @@ function Invitados() {
 
             const editando = invitadoEditandoId !== null;
 
-            const respuesta = await fetch(
+            const respuesta = await apiFetch(
                 editando
                     ? `${API_INVITADOS}/${invitadoEditandoId}`
                     : API_INVITADOS,
@@ -355,7 +357,7 @@ function Invitados() {
                     );
                 }
 
-                const respuestaAsociacion = await fetch(
+                const respuestaAsociacion = await apiFetch(
                     `${API_INVITADOS}/asociar`,
                     {
                         method: 'POST',
@@ -433,7 +435,7 @@ function Invitados() {
         try {
             setProcesandoAsociacion(true);
 
-            const respuesta = await fetch(`${API_INVITADOS}/asociar`, {
+            const respuesta = await apiFetch(`${API_INVITADOS}/asociar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -468,7 +470,7 @@ function Invitados() {
     // ACTUALIZAR RSVP
     const actualizarRsvp = async (idInvitado, estadoRsvp) => {
         try {
-            const respuesta = await fetch(
+            const respuesta = await apiFetch(
                 `${API_INVITADOS}/eventos/${eventoSeleccionado}/invitados/${idInvitado}/rsvp`,
                 {
                     method: 'PATCH',
@@ -497,7 +499,7 @@ function Invitados() {
     // ACTUALIZAR MESA
     const actualizarMesa = async (idInvitado, idMesa) => {
         try {
-            const respuesta = await fetch(
+            const respuesta = await apiFetch(
                 `${API_INVITADOS}/eventos/${eventoSeleccionado}/invitados/${idInvitado}/mesa`,
                 {
                     method: 'PATCH',
@@ -534,7 +536,7 @@ function Invitados() {
         const invitado = confirmacionRetirar;
 
         try {
-            const respuesta = await fetch(
+            const respuesta = await apiFetch(
                 `${API_INVITADOS}/eventos/${eventoSeleccionado}/invitados/${invitado.id_invitado}`,
                 {
                     method: 'DELETE',
@@ -569,7 +571,7 @@ function Invitados() {
         try {
             setEliminandoId(invitado.idInvitado);
 
-            const respuesta = await fetch(
+            const respuesta = await apiFetch(
                 `${API_INVITADOS}/${invitado.idInvitado}`,
                 {
                     method: 'DELETE',

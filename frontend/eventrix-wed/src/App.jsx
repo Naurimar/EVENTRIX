@@ -1,12 +1,11 @@
-
 import { useEffect, useState } from 'react';
-
+import { apiFetch } from './services/api';
+import Login from './pages/Login';
 import {
   CalendarDays,
   Users,
   BriefcaseBusiness,
   CalendarCheck,
-  ArrowUpRight,
   Clock3,
   ChartNoAxesCombined,
 } from 'lucide-react';
@@ -18,15 +17,32 @@ import Reservas from './pages/Reservas';
 import Reportes from './pages/Reportes';
 import Proveedores from './pages/Proveedores';
 import Invitados from './pages/Invitados';
+import EventosPage from './pages/eventos/EventosPage';
+import ClientesPage from './pages/clientes/ClientesPage';
+import EspaciosPage from './pages/espacios/EspaciosPage';
 
 import './App.css';
 
 const API_REPORTES = 'http://localhost:8080/api/reportes/resumen';
 
+const API_RESERVAS = 'http://localhost:8080/api/reservas';
+
 const pageContent = {
   inicio: {
     title: 'Te damos la bienvenida a EVENTRIX',
     description: 'Gestiona y organiza tus eventos desde un solo lugar.',
+  },
+  eventos: {
+    title: 'Eventos',
+    description: 'Crea, consulta y administra los eventos registrados.',
+  },
+  clientes: {
+    title: 'Clientes',
+    description: 'Administra la información de los clientes de EVENTRIX.',
+  },
+  espacios: {
+    title: 'Espacios',
+    description: 'Gestiona los espacios disponibles para tus eventos.',
   },
   reservas: {
     title: 'Reservas',
@@ -46,25 +62,12 @@ const pageContent = {
   },
 };
 
-// Leer las reservas guardadas en el navegador.
-function obtenerReservas() {
-  try {
-    const datos = localStorage.getItem('eventrix_reservas');
 
-    if (!datos) {
-      return [];
-    }
 
-    const reservas = JSON.parse(datos);
-    return Array.isArray(reservas) ? reservas : [];
-  } catch (error) {
-    console.error('Error al consultar las reservas:', error);
-    return [];
-  }
-}
 
 function Dashboard() {
   const [resumen, setResumen] = useState(null);
+  const [reservas, setReservas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorAPI, setErrorAPI] = useState('');
 
@@ -74,7 +77,7 @@ function Dashboard() {
         setCargando(true);
         setErrorAPI('');
 
-        const respuesta = await fetch(API_REPORTES);
+        const respuesta = await apiFetch(API_REPORTES);
 
         if (!respuesta.ok) {
           throw new Error(`Error HTTP ${respuesta.status}`);
@@ -93,8 +96,26 @@ function Dashboard() {
     consultarResumen();
   }, []);
 
-  // Reservas locales: se conservan como estaban.
-  const reservas = obtenerReservas();
+  useEffect(() => {
+    const consultarReservas = async () => {
+      try {
+        const respuesta = await apiFetch(API_RESERVAS);
+
+        if (!respuesta.ok) {
+          throw new Error(`Error HTTP ${respuesta.status}`);
+        }
+
+        const datos = await respuesta.json();
+        setReservas(Array.isArray(datos) ? datos : []);
+      } catch (error) {
+        console.error('Error al consultar las reservas:', error);
+        setReservas([]);
+      }
+    };
+
+    consultarReservas();
+  }, []);
+
 
   const totalReservas = reservas.length;
 
@@ -113,9 +134,7 @@ function Dashboard() {
       String(reserva.estado || '').toLowerCase() === 'cancelada'
   ).length;
 
-  const totalInvitadosReservas = reservas.reduce((total, reserva) => {
-    return total + (Number(reserva.invitados) || 0);
-  }, 0);
+
 
   const indicadores = resumen || {};
 
@@ -136,9 +155,7 @@ function Dashboard() {
     },
     {
       title: 'Invitados',
-      value: cargando
-        ? '...'
-        : (indicadores.totalInvitados ?? totalInvitadosReservas),
+      value: cargando ? '...' : (indicadores.totalInvitados ?? 0),
       detail: 'Invitados registrados en el resumen',
       icon: Users,
       color: 'lavender',
@@ -203,7 +220,7 @@ function Dashboard() {
                   <small>{item.detail}</small>
                 </div>
 
-                <ArrowUpRight className="indicator-arrow" size={17} />
+
               </article>
             );
           })}
@@ -355,10 +372,24 @@ function ModulePlaceholder({ title, description }) {
 function App() {
   const [activePage, setActivePage] = useState('inicio');
 
+  const [token, setToken] = useState(
+    () => sessionStorage.getItem('eventrix_token')
+  );
+
+  const cerrarSesion = () => {
+    sessionStorage.removeItem('eventrix_token');
+    setToken(null);
+    setActivePage('inicio');
+  };
+
   const currentPage = pageContent[activePage] || {
     title: 'EVENTRIX',
     description: 'Gestión inteligente de eventos.',
   };
+
+  if (!token) {
+    return <Login onLogin={setToken} />;
+  }
 
   return (
     <div className="app-layout">
@@ -368,7 +399,12 @@ function App() {
       />
 
       <main className="main-content">
-        <Header activePage={activePage} />
+
+        <Header
+          activePage={activePage}
+          onLogout={cerrarSesion}
+          onNavigate={setActivePage}
+        />
 
         <section className="page-content">
           {activePage === 'inicio' ? (
@@ -422,13 +458,48 @@ function App() {
                 <h2>{currentPage.title}</h2>
                 <p>{currentPage.description}</p>
               </section>
-              
+
+
 
               <Invitados />
+            </>
+          ) : activePage === 'eventos' ? (
+            <>
+              <section className="module-banner">
+                <span className="welcome-label">
+                  GESTIÓN DE EVENTOS
+                </span>
+                <h2>{currentPage.title}</h2>
+                <p>{currentPage.description}</p>
+              </section>
+              <EventosPage />
+            </>
+          ) : activePage === 'clientes' ? (
+            <>
+              <section className="module-banner">
+                <span className="welcome-label">
+                  GESTIÓN DE CLIENTES
+                </span>
+                <h2>{currentPage.title}</h2>
+                <p>{currentPage.description}</p>
+              </section>
+              <ClientesPage />
+            </>
+          ) : activePage === 'espacios' ? (
+            <>
+              <section className="module-banner">
+                <span className="welcome-label">
+                  GESTIÓN DE ESPACIOS
+                </span>
+                <h2>{currentPage.title}</h2>
+                <p>{currentPage.description}</p>
+              </section>
+              <EspaciosPage />
             </>
           ) : (
             <>
               <section className="module-banner">
+
                 <span className="welcome-label">
                   GESTIÓN INTELIGENTE DE EVENTOS
                 </span>
