@@ -1,16 +1,68 @@
-# React + Vite
+﻿# EVENTRIX - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Descripcion del proyecto
+Interfaz web de EVENTRIX para la gestion y organizacion de eventos y la conexion entre usuarios y proveedores.
 
-Currently, two official plugins are available:
+## Funcionalidades desarrolladas
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Pagina principal
+- Presentacion de la plataforma.
+- Navegacion por las diferentes secciones.
+- Interfaz visual de EVENTRIX.
 
-## React Compiler
+### Registro e inicio de sesion
+- Formularios de registro e inicio de sesion.
+- Captura y validacion de datos.
+- Integracion con los servicios de autenticacion del backend.
+- Interfaz para autenticacion con Google.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Registro de proveedores
+- Captura de datos personales o empresariales.
+- Formulario organizado por pasos.
+- Separacion entre datos principales y carga de documentos.
 
-## Expanding the ESLint configuration
+### Gestion documental
+- Seccion para adjuntar documentos.
+- Organizacion de los documentos solicitados.
+- Envio de la informacion al backend.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Confirmacion de solicitud
+- Mensaje de confirmacion del envio.
+- Notificacion visual flotante.
+- Informacion sobre el plazo estimado de revision de 24 horas.
+
+### Contacto
+- Formulario para enviar mensajes.
+- Captura de datos de contacto.
+- Comunicacion con el backend.
+
+## Tecnologias
+- React
+- JavaScript
+- HTML
+- CSS
+- Vite
+- npm
+
+## Integracion
+El frontend se comunica con el backend de EVENTRIX mediante servicios HTTP para los procesos de autenticacion, registro de proveedores, documentos y contacto.
+
+## Instalacion y ejecucion
+
+Instalar dependencias:
+
+    npm install
+
+Iniciar el entorno de desarrollo:
+
+    npm run dev
+
+Crear compilacion de produccion:
+
+    npm run build
+
+## Estado del desarrollo
+Este proyecto contiene las interfaces y flujos de usuario del frontend de EVENTRIX. Su funcionamiento integrado depende de la configuracion y disponibilidad del backend.
+
+---
+EVENTRIX - Gestion inteligente de eventos.
