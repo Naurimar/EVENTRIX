@@ -19,6 +19,9 @@ public class Usuario {
     @Column(name = "correo", nullable = false, unique = true, length = 150)
     private String correo;
 
+    @Column(name = "google_sub", unique = true, length = 255)
+    private String googleSub;
+
     @Column(name = "clave", nullable = false, length = 255)
     private String clave;
 
@@ -65,6 +68,14 @@ public class Usuario {
 
     public void setClave(String clave) {
         this.clave = clave;
+    }
+
+    public String getGoogleSub() {
+        return googleSub;
+    }
+
+    public void setGoogleSub(String googleSub) {
+        this.googleSub = googleSub;
     }
 
     public Boolean getEstado() {
