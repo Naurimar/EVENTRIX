@@ -40,3 +40,8 @@ desktop.ini
 # Archivos temporales
 *.tmp
 *.temp
+
+# Respaldos locales de EVENTRIX
+*.bak*
+*.respaldo
+**/respaldo-*/
