@@ -4,6 +4,7 @@ package eventrix_api.config;
 import eventrix_api.security.JwtAuthenticationFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -111,7 +112,9 @@ public class SecurityConfig {
             .authenticationProvider(authenticationProvider)
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/error", "/api/auth/**").permitAll()
+                .requestMatchers("/", "/error", "/api/auth/**", "/api/contacto/**").permitAll()
+.requestMatchers(HttpMethod.POST, "/api/solicitudes-proveedor").permitAll()
+.requestMatchers(HttpMethod.POST, "/api/solicitudes-proveedor/carga/**").permitAll()
                 .anyRequest().authenticated()
             )
 
@@ -123,3 +126,4 @@ public class SecurityConfig {
         return http.build();
     }
 }
+
