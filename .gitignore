@@ -1,0 +1,42 @@
+﻿# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+**/application-local.properties
+
+# Base de datos
+*.sql
+!/database/
+!/database/eventrix_oficial.sql
+*.dump
+*.bak
+
+# Dependencias de Node
+node_modules/
+**/node_modules/
+
+# Construcciones
+dist/
+**/dist/
+target/
+**/target/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.iml
+
+# Archivos temporales
+*.tmp
+*.temp

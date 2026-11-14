@@ -1,0 +1,10 @@
+{
+  "capacidad": 150,
+  "disponible": true,
+  "idCiudad": 1,
+  "idEspacio": 1,
+  "nombre": "Registro de prueba",
+  "tarifa": 850000,
+  "tipo": "Salon de eventos",
+  "ubicacion": "Ubicación ficticia"
+}
